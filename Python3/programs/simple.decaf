@@ -1,0 +1,16 @@
+class Program
+{
+struct A
+{
+	int a;
+};
+
+struct B
+{
+	int b;
+	struct A c;
+};
+
+
+
+}

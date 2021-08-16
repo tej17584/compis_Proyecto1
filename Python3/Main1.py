@@ -18,7 +18,7 @@ class DecafPrinter(decafAlejandroListener):
 
     '''
     Antlr te crea distintos parametros, por ejemplo este
-    enter[nombre de relga de tu gramatica]
+    enter[nombre de regla de tu gramatica]
     '''
 
     def enterMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
@@ -27,11 +27,24 @@ class DecafPrinter(decafAlejandroListener):
             te crea un metodo por cada posible nodo hijo de tu regla, ese te devuelve el nodo
         '''
         tipo = ctx.methodType().getText()
-        nombre = ctx.id_tok().getText()
+        nombre = ctx.ID().getText()
+        print(nombre)
+
+    def enterStructDeclaration(self, ctx: decafAlejandroParser.StructDeclarationContext):
+        variable2 = ctx.depth()
+        conteoHijos = ctx.getChildCount()
+
+    def visitTerminal(self, node: TerminalNode):
+        # $print(node)
+        return super().visitTerminal(node)
+
+    def enterEveryRule(self, ctx: ParserRuleContext):
+
+        print(ctx.getText())
 
 
 def main():
-    data = open('Python3/programs/test.txt').read()
+    data = open('Python3/programs/simple.decaf').read()
     lexer = decafAlejandroLexer(InputStream(data))
     stream = CommonTokenStream(lexer)
     parser = decafAlejandroParser(stream)
