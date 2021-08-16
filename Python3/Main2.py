@@ -28,7 +28,7 @@ def traverse(tree, rule_names, indent=0):
 
 def main():
     print("Imprimiendo el árbol..................")
-    data = open('antlr/Python3/programs/test.txt').read()
+    data = open('Python3/programs/test.txt').read()
     lexer = decafAlejandroLexer(InputStream(data))
     stream = CommonTokenStream(lexer)
     parser = decafAlejandroParser(stream)

@@ -31,7 +31,7 @@ class DecafPrinter(decafAlejandroListener):
 
 
 def main():
-    data = open('antlr/Python3/programs/test.txt').read()
+    data = open('Python3/programs/test.txt').read()
     lexer = decafAlejandroLexer(InputStream(data))
     stream = CommonTokenStream(lexer)
     parser = decafAlejandroParser(stream)
