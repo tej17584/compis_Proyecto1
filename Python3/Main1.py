@@ -15,6 +15,7 @@ Los nombres pueden cambiar en todo el ejemplo, depende de tu gramatica
 class DecafPrinter(decafAlejandroListener):
     def _init_(self) -> None:
         super()._init_()
+        self.notMainName = True
 
     '''
     Antlr te crea distintos parametros, por ejemplo este
@@ -22,25 +23,43 @@ class DecafPrinter(decafAlejandroListener):
     '''
 
     def enterMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
-        '''
-            ctx es el contexto de ese nodo, tambien tien un monton de funciones. Por ejemplo,
-            te crea un metodo por cada posible nodo hijo de tu regla, ese te devuelve el nodo
-        '''
+
+        print("-----------ENTER ---------------")
         tipo = ctx.methodType().getText()
         nombre = ctx.ID().getText()
-        print(nombre)
+        parametro = ctx.parameter()
+        conteo = ctx.getChildCount()
+        print(tipo, " ", nombre, " ", parametro, " ", conteo, " ")
+        print("-----------ENTER---------------")
+        """ for x in range(0, conteo):
+            print(ctx.getChild(x).getText())
+        print("---------------") """
 
-    def enterStructDeclaration(self, ctx: decafAlejandroParser.StructDeclarationContext):
+    """ def enterStructDeclaration(self, ctx: decafAlejandroParser.StructDeclarationContext):
         variable2 = ctx.depth()
         conteoHijos = ctx.getChildCount()
 
-    def visitTerminal(self, node: TerminalNode):
-        # $print(node)
-        return super().visitTerminal(node)
+    def enterVarDeclaration(self, ctx: decafAlejandroParser.VarDeclarationContext):
+        name = ctx.ID().getText()
+        column = ctx.start.column
+        line = ctx.start.line
+        type = ctx.varType().getText()
+        error = "ERRORAZO"
+        print(name, " ", column, " ", line, " ", type, " ", error, "") """
 
-    def enterEveryRule(self, ctx: ParserRuleContext):
+    def exitMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
+        print("-----------EXIT ---------------")
+        tipo = ctx.methodType().getText()
+        nombre = ctx.ID().getText()
+        parametro = ctx.parameter()
+        conteo = ctx.getChildCount()
+        print(tipo, " ", nombre, " ", parametro, " ", conteo, " ")
+        print("----------- FIN EXIT ---------------")
 
-        print(ctx.getText())
+    """ def visitTerminal(self, node: TerminalNode):
+        print(node.getText())
+        if(node == "void" and (node+1) == "main" and (node+2) == "(" and (node+3) == ")"):
+            print("YAY regla cumplida") """
 
 
 def main():

@@ -1,9 +1,14 @@
 class Program
 {
+
+char var[5];
 struct A
 {
 	int a;
+
 };
+
+
 
 struct B
 {
@@ -12,5 +17,14 @@ struct B
 };
 
 
+void patito(){
+
+	int patitos;
+}
+
+void main()
+{
+	int s;
+}
 
 }
