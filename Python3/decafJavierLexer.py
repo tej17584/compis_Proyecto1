@@ -1,4 +1,4 @@
-# Generated from decafJavier.g4 by ANTLR 4.9.2
+# Generated from decafAlejandro.g4 by ANTLR 4.9.2
 from antlr4 import *
 from io import StringIO
 import sys
@@ -273,7 +273,7 @@ class decafJavierLexer(Lexer):
                   "ALPHA_NUM", "HEX_DIGIT", "LINE_COMMENT", "COMMENT", "NEWLINE", 
                   "WHITESPACE" ]
 
-    grammarFileName = "decafJavier.g4"
+    grammarFileName = "decafAlejandro.g4"
 
     def __init__(self, input=None, output:TextIO = sys.stdout):
         super().__init__(input, output)

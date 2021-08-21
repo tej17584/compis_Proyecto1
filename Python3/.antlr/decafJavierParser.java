@@ -1,4 +1,4 @@
-// Generated from c:\Users\josea\Desktop\Compiladores\antlr\Python3\decafJavier.g4 by ANTLR 4.8
+// Generated from c:\Users\josea\Desktop\Compiladores\compis_Proyecto1\Python3\decafJavier.g4 by ANTLR 4.8
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;

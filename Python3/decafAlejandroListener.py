@@ -26,66 +26,75 @@ class decafAlejandroListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by decafAlejandroParser#varDeclaration.
-    def enterVarDeclaration(self, ctx:decafAlejandroParser.VarDeclarationContext):
+    # Enter a parse tree produced by decafAlejandroParser#vardeclr.
+    def enterVardeclr(self, ctx:decafAlejandroParser.VardeclrContext):
         pass
 
-    # Exit a parse tree produced by decafAlejandroParser#varDeclaration.
-    def exitVarDeclaration(self, ctx:decafAlejandroParser.VarDeclarationContext):
-        pass
-
-
-    # Enter a parse tree produced by decafAlejandroParser#structDeclaration.
-    def enterStructDeclaration(self, ctx:decafAlejandroParser.StructDeclarationContext):
-        pass
-
-    # Exit a parse tree produced by decafAlejandroParser#structDeclaration.
-    def exitStructDeclaration(self, ctx:decafAlejandroParser.StructDeclarationContext):
+    # Exit a parse tree produced by decafAlejandroParser#vardeclr.
+    def exitVardeclr(self, ctx:decafAlejandroParser.VardeclrContext):
         pass
 
 
-    # Enter a parse tree produced by decafAlejandroParser#varType.
-    def enterVarType(self, ctx:decafAlejandroParser.VarTypeContext):
+    # Enter a parse tree produced by decafAlejandroParser#field_declr.
+    def enterField_declr(self, ctx:decafAlejandroParser.Field_declrContext):
         pass
 
-    # Exit a parse tree produced by decafAlejandroParser#varType.
-    def exitVarType(self, ctx:decafAlejandroParser.VarTypeContext):
-        pass
-
-
-    # Enter a parse tree produced by decafAlejandroParser#methodDeclaration.
-    def enterMethodDeclaration(self, ctx:decafAlejandroParser.MethodDeclarationContext):
-        pass
-
-    # Exit a parse tree produced by decafAlejandroParser#methodDeclaration.
-    def exitMethodDeclaration(self, ctx:decafAlejandroParser.MethodDeclarationContext):
+    # Exit a parse tree produced by decafAlejandroParser#field_declr.
+    def exitField_declr(self, ctx:decafAlejandroParser.Field_declrContext):
         pass
 
 
-    # Enter a parse tree produced by decafAlejandroParser#methodType.
-    def enterMethodType(self, ctx:decafAlejandroParser.MethodTypeContext):
+    # Enter a parse tree produced by decafAlejandroParser#array_id.
+    def enterArray_id(self, ctx:decafAlejandroParser.Array_idContext):
         pass
 
-    # Exit a parse tree produced by decafAlejandroParser#methodType.
-    def exitMethodType(self, ctx:decafAlejandroParser.MethodTypeContext):
-        pass
-
-
-    # Enter a parse tree produced by decafAlejandroParser#parameter.
-    def enterParameter(self, ctx:decafAlejandroParser.ParameterContext):
-        pass
-
-    # Exit a parse tree produced by decafAlejandroParser#parameter.
-    def exitParameter(self, ctx:decafAlejandroParser.ParameterContext):
+    # Exit a parse tree produced by decafAlejandroParser#array_id.
+    def exitArray_id(self, ctx:decafAlejandroParser.Array_idContext):
         pass
 
 
-    # Enter a parse tree produced by decafAlejandroParser#parameterType.
-    def enterParameterType(self, ctx:decafAlejandroParser.ParameterTypeContext):
+    # Enter a parse tree produced by decafAlejandroParser#field_var.
+    def enterField_var(self, ctx:decafAlejandroParser.Field_varContext):
         pass
 
-    # Exit a parse tree produced by decafAlejandroParser#parameterType.
-    def exitParameterType(self, ctx:decafAlejandroParser.ParameterTypeContext):
+    # Exit a parse tree produced by decafAlejandroParser#field_var.
+    def exitField_var(self, ctx:decafAlejandroParser.Field_varContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#var_id.
+    def enterVar_id(self, ctx:decafAlejandroParser.Var_idContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#var_id.
+    def exitVar_id(self, ctx:decafAlejandroParser.Var_idContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#struct_declr.
+    def enterStruct_declr(self, ctx:decafAlejandroParser.Struct_declrContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#struct_declr.
+    def exitStruct_declr(self, ctx:decafAlejandroParser.Struct_declrContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#method_declr.
+    def enterMethod_declr(self, ctx:decafAlejandroParser.Method_declrContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#method_declr.
+    def exitMethod_declr(self, ctx:decafAlejandroParser.Method_declrContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#return_type.
+    def enterReturn_type(self, ctx:decafAlejandroParser.Return_typeContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#return_type.
+    def exitReturn_type(self, ctx:decafAlejandroParser.Return_typeContext):
         pass
 
 
@@ -107,6 +116,33 @@ class decafAlejandroListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by decafAlejandroParser#method_call_inter.
+    def enterMethod_call_inter(self, ctx:decafAlejandroParser.Method_call_interContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#method_call_inter.
+    def exitMethod_call_inter(self, ctx:decafAlejandroParser.Method_call_interContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#method_call.
+    def enterMethod_call(self, ctx:decafAlejandroParser.Method_callContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#method_call.
+    def exitMethod_call(self, ctx:decafAlejandroParser.Method_callContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#expr.
+    def enterExpr(self, ctx:decafAlejandroParser.ExprContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#expr.
+    def exitExpr(self, ctx:decafAlejandroParser.ExprContext):
+        pass
+
+
     # Enter a parse tree produced by decafAlejandroParser#location.
     def enterLocation(self, ctx:decafAlejandroParser.LocationContext):
         pass
@@ -116,48 +152,21 @@ class decafAlejandroListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by decafAlejandroParser#expression.
-    def enterExpression(self, ctx:decafAlejandroParser.ExpressionContext):
+    # Enter a parse tree produced by decafAlejandroParser#callout_arg.
+    def enterCallout_arg(self, ctx:decafAlejandroParser.Callout_argContext):
         pass
 
-    # Exit a parse tree produced by decafAlejandroParser#expression.
-    def exitExpression(self, ctx:decafAlejandroParser.ExpressionContext):
-        pass
-
-
-    # Enter a parse tree produced by decafAlejandroParser#methodCall.
-    def enterMethodCall(self, ctx:decafAlejandroParser.MethodCallContext):
-        pass
-
-    # Exit a parse tree produced by decafAlejandroParser#methodCall.
-    def exitMethodCall(self, ctx:decafAlejandroParser.MethodCallContext):
+    # Exit a parse tree produced by decafAlejandroParser#callout_arg.
+    def exitCallout_arg(self, ctx:decafAlejandroParser.Callout_argContext):
         pass
 
 
-    # Enter a parse tree produced by decafAlejandroParser#arg.
-    def enterArg(self, ctx:decafAlejandroParser.ArgContext):
+    # Enter a parse tree produced by decafAlejandroParser#int_literal.
+    def enterInt_literal(self, ctx:decafAlejandroParser.Int_literalContext):
         pass
 
-    # Exit a parse tree produced by decafAlejandroParser#arg.
-    def exitArg(self, ctx:decafAlejandroParser.ArgContext):
-        pass
-
-
-    # Enter a parse tree produced by decafAlejandroParser#op.
-    def enterOp(self, ctx:decafAlejandroParser.OpContext):
-        pass
-
-    # Exit a parse tree produced by decafAlejandroParser#op.
-    def exitOp(self, ctx:decafAlejandroParser.OpContext):
-        pass
-
-
-    # Enter a parse tree produced by decafAlejandroParser#arith_op.
-    def enterArith_op(self, ctx:decafAlejandroParser.Arith_opContext):
-        pass
-
-    # Exit a parse tree produced by decafAlejandroParser#arith_op.
-    def exitArith_op(self, ctx:decafAlejandroParser.Arith_opContext):
+    # Exit a parse tree produced by decafAlejandroParser#int_literal.
+    def exitInt_literal(self, ctx:decafAlejandroParser.Int_literalContext):
         pass
 
 
@@ -197,30 +206,48 @@ class decafAlejandroListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by decafAlejandroParser#int_literal.
-    def enterInt_literal(self, ctx:decafAlejandroParser.Int_literalContext):
+    # Enter a parse tree produced by decafAlejandroParser#bin_op.
+    def enterBin_op(self, ctx:decafAlejandroParser.Bin_opContext):
         pass
 
-    # Exit a parse tree produced by decafAlejandroParser#int_literal.
-    def exitInt_literal(self, ctx:decafAlejandroParser.Int_literalContext):
-        pass
-
-
-    # Enter a parse tree produced by decafAlejandroParser#char_literal.
-    def enterChar_literal(self, ctx:decafAlejandroParser.Char_literalContext):
-        pass
-
-    # Exit a parse tree produced by decafAlejandroParser#char_literal.
-    def exitChar_literal(self, ctx:decafAlejandroParser.Char_literalContext):
+    # Exit a parse tree produced by decafAlejandroParser#bin_op.
+    def exitBin_op(self, ctx:decafAlejandroParser.Bin_opContext):
         pass
 
 
-    # Enter a parse tree produced by decafAlejandroParser#bool_literal.
-    def enterBool_literal(self, ctx:decafAlejandroParser.Bool_literalContext):
+    # Enter a parse tree produced by decafAlejandroParser#arith_op.
+    def enterArith_op(self, ctx:decafAlejandroParser.Arith_opContext):
         pass
 
-    # Exit a parse tree produced by decafAlejandroParser#bool_literal.
-    def exitBool_literal(self, ctx:decafAlejandroParser.Bool_literalContext):
+    # Exit a parse tree produced by decafAlejandroParser#arith_op.
+    def exitArith_op(self, ctx:decafAlejandroParser.Arith_opContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#var_type.
+    def enterVar_type(self, ctx:decafAlejandroParser.Var_typeContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#var_type.
+    def exitVar_type(self, ctx:decafAlejandroParser.Var_typeContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#assign_op.
+    def enterAssign_op(self, ctx:decafAlejandroParser.Assign_opContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#assign_op.
+    def exitAssign_op(self, ctx:decafAlejandroParser.Assign_opContext):
+        pass
+
+
+    # Enter a parse tree produced by decafAlejandroParser#method_name.
+    def enterMethod_name(self, ctx:decafAlejandroParser.Method_nameContext):
+        pass
+
+    # Exit a parse tree produced by decafAlejandroParser#method_name.
+    def exitMethod_name(self, ctx:decafAlejandroParser.Method_nameContext):
         pass
 
 

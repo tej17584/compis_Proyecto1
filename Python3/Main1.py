@@ -24,18 +24,18 @@ class DecafPrinter(decafAlejandroListener):
 
     def enterMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
 
-        print("-----------ENTER ---------------")
+        #print("-----------ENTER ---------------")
         tipo = ctx.methodType().getText()
         nombre = ctx.ID().getText()
         parametro = ctx.parameter()
         conteo = ctx.getChildCount()
-        print(tipo, " ", nombre, " ", parametro, " ", conteo, " ")
-        print("-----------ENTER---------------")
+        #print(tipo, " ", nombre, " ", parametro, " ", conteo, " ")
+        # print("-----------ENTER---------------")
         """ for x in range(0, conteo):
             print(ctx.getChild(x).getText())
         print("---------------") """
 
-    """ def enterStructDeclaration(self, ctx: decafAlejandroParser.StructDeclarationContext):
+    def enterStructDeclaration(self, ctx: decafAlejandroParser.StructDeclarationContext):
         variable2 = ctx.depth()
         conteoHijos = ctx.getChildCount()
 
@@ -45,16 +45,16 @@ class DecafPrinter(decafAlejandroListener):
         line = ctx.start.line
         type = ctx.varType().getText()
         error = "ERRORAZO"
-        print(name, " ", column, " ", line, " ", type, " ", error, "") """
+        print(name, " ", column, " ", line, " ", type, " ", error, "")
 
     def exitMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
-        print("-----------EXIT ---------------")
+        #print("-----------EXIT ---------------")
         tipo = ctx.methodType().getText()
         nombre = ctx.ID().getText()
         parametro = ctx.parameter()
         conteo = ctx.getChildCount()
-        print(tipo, " ", nombre, " ", parametro, " ", conteo, " ")
-        print("----------- FIN EXIT ---------------")
+        #print(tipo, " ", nombre, " ", parametro, " ", conteo, " ")
+        #print("----------- FIN EXIT ---------------")
 
     """ def visitTerminal(self, node: TerminalNode):
         print(node.getText())
