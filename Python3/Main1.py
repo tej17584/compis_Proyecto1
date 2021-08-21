@@ -6,12 +6,6 @@ from decafAlejandroParser import decafAlejandroParser
 import sys
 
 
-'''
-Clase que vos creas que hereda del Listener que antlr te crea
-Los nombres pueden cambiar en todo el ejemplo, depende de tu gramatica
-'''
-
-
 class DecafPrinter(decafAlejandroListener):
     def _init_(self) -> None:
         super()._init_()

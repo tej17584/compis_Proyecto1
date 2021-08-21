@@ -1,16 +1,9 @@
 class Program
 {
-struct A
+	int y[5];
+void main(void)
 {
-	int a;
-
-};
-struct B
-{
-	int b;
-	struct A c;
-	int a;
-};
-
+	int y[5];
+}
 
 }
