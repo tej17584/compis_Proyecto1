@@ -15,6 +15,7 @@ from antlr4 import *
 from antlr4.tree.Trees import TerminalNode
 from funciones import *
 from ErrorClass import *
+from symbolTable import *
 import sys
 
 
@@ -23,28 +24,44 @@ class decafAlejandroPrinter(decafAlejandroListener):
     Clase encargada de los métodos generados por ANTLR
     """
 
-    def _init_(self) -> None:
-        super()._init_()
-        self.dictStructs = []  # {"a" : ["int", "y"], "b": ["char", "y"]}
-        self.dictSymbols = []  # {"a" : ["int", "main", 4 ]}
-        self.dictMethods = []  # {"main":["void", ["param1", "param2"]]}
+    def __init__(self) -> None:
+        self.functions = funciones()  # funciones necesarias y varias
+        self.tablaSimbolos = symbolTables()
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
         return super().enterVardeclr(ctx)
 
     def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
-        conteo = int(ctx.expr().getText())  # valor declarado dentro del array
         name = ctx.ID().getText()  # el nombre del array
         column = ctx.start.column
         line = ctx.start.line
-        #print("el tipo de dato es: ", tipo)
-        claseError = Errores(name, column, line, "")
-        hasError, errorValue = claseError.checkArrayError(conteo)
-        if(hasError):
-            print(errorValue)
-            exit()
+        # verificamos si lo que viene es un numero o letra
+        arrayValue = ctx.expr().getText()
+        if(self.functions.checkIfIsInt(arrayValue)):
+            # valor declarado dentro del array
+            arrayValue = int(arrayValue)
+            claseError = Errores(name, column, line, "")
+            hasError, errorValue = claseError.checkArrayError(
+                arrayValue, False)
+            if(hasError):
+                print(errorValue)
+                exit()
         else:
-            print("MARAVILLOSO")
+            oldArrayValue = arrayValue
+            varExists, arrayValue = self.tablaSimbolos.checkVarInVarSymbolTable(
+                arrayValue)
+            if(varExists):
+                tipoDato = self.tablaSimbolos.getTypeVarDictVar(oldArrayValue)
+                claseError = Errores(name, column, line, tipoDato)
+                hasError, errorValue = claseError.checkArrayError(
+                    arrayValue, True)
+                if(hasError):
+                    print(errorValue)
+                    exit()
+            else:
+                print(
+                    f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en la declaración de un array en la linea:{line} columna:{column} ')
+                exit()
 
     """  def enterMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
 

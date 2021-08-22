@@ -111,3 +111,14 @@ class funciones():
                 string1 += i
 
         return string1
+
+    def checkIfIsInt(self, valor):
+        """
+        Chequea si un valor es numero o letra
+        *@param: valor: el valor a testear
+        """
+        try:
+            int(valor)
+            return True
+        except:
+            return False
