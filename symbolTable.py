@@ -16,10 +16,12 @@ import json
 
 class symbolTables():
     def __init__(self) -> None:
-        self.dictStructs = {}  # {"a" : ["int", "y"], "b": ["char", "y"]}
+        # {"a" : ["int", "y"], "b": ["char", "y"]}
+        self.dictStructs = {}
         # {"a" : ["int", "main", 4 ]}
-        self.dictVars = {"a": ["int", "main", -10, 0]}
-        self.dictMethods = {}  # {"main":["void", ["param1", "param2"]]}
+        self.dictVars = {"asssss": ["int", "main", 10, 0]}
+        # {"main":["void", ["param1", "param2"]]}
+        self.dictMethods = {}
         self.functions = funciones()  # funciones necesarias y varias
 
     def getTypeVarDictVar(self, varID):
@@ -71,7 +73,6 @@ class symbolTables():
         Revisa si una variable dada EXISTE en la tabla de simbolos de variables
         Si existe, retorna TRUE y el valor de esa variable. Si no, retorna False
         *@param: variable: la variable a verificar en la tabla de simbolos
-        *@param: dictVars: el diccionario con la tabla de simbolos de variables
         """
         for nombreVariable, valores in self.dictVars.items():
             if(str(variable) == str(nombreVariable)):

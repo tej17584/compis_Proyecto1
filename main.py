@@ -27,9 +27,22 @@ class decafAlejandroPrinter(decafAlejandroListener):
     def __init__(self) -> None:
         self.functions = funciones()  # funciones necesarias y varias
         self.tablaSimbolos = symbolTables()
+        self.scopeActual = "global"
+        self.scopeAnterior = "global"
+
+    def enterMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
+        # actualizamos el scope
+        self.scopeAnterior = self.scopeActual
+        self.scopeActual = ctx.method_name().getText()
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
-        return super().enterVardeclr(ctx)
+        name = ctx.field_var()[0].getText()  # el nombre de la variable
+        tipo = ctx.var_type()[0].getText()
+        line = ctx.start.line
+        column = ctx.start.column
+        scope = self.scopeActual
+
+        print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
 
     def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
         name = ctx.ID().getText()  # el nombre del array
@@ -60,7 +73,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     exit()
             else:
                 print(
-                    f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en la declaración de un array en la linea:{line} columna:{column} ')
+                    f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
                 exit()
 
     """  def enterMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
