@@ -22,6 +22,28 @@ class symbolTables():
         self.dictMethods = {}  # {"main":["void", ["param1", "param2"]]}
         self.functions = funciones()  # funciones necesarias y varias
 
+    def getTypeVarDictVar(self, varID):
+        """
+        Dada un varID, retorna el tipo si existe en la tabla de variables.
+        *@param: varID: el id de la variable a checar el tipo
+        """
+        for variableID, valor in self.dictVars.items():
+            if(variableID == varID):
+                return valor[0]  # retornamos el VALOR de la tabla
+
+        return ""
+
+    def getScopeVarDictVar(self, varID):
+        """
+        Dada un varID, retorna el valor si existe en la tabla de variables.
+        *@param: varID: el id de la variable a checar
+        """
+        for variableID, valor in self.dictVars.items():
+            if(variableID == varID):
+                return valor[1]  # retornamos el VALOR de la tabla
+
+        return ""
+
     def getValorVarDictVar(self, varID):
         """
         Dada un varID, retorna el valor si existe en la tabla de variables.
@@ -33,14 +55,14 @@ class symbolTables():
 
         return ""
 
-    def getTypeVarDictVar(self, varID):
+    def getOffsetVarDictVar(self, varID):
         """
-        Dada un varID, retorna el tipo si existe en la tabla de variables.
-        *@param: varID: el id de la variable a checar el tipo
+        Dada un varID, retorna el valor si existe en la tabla de variables.
+        *@param: varID: el id de la variable a checar
         """
         for variableID, valor in self.dictVars.items():
             if(variableID == varID):
-                return valor[0]  # retornamos el VALOR de la tabla
+                return valor[3]  # retornamos el VALOR de la tabla
 
         return ""
 
