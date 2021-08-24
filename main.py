@@ -11,6 +11,7 @@ ANTRL, tambien maneja algunas logicas
 from decafAlejandroLexer import decafAlejandroLexer
 from decafAlejandroParser import decafAlejandroParser
 from decafAlejandroListener import decafAlejandroListener
+from antlr4.error.ErrorListener import ErrorListener
 from antlr4 import *
 from antlr4.tree.Trees import TerminalNode
 from funciones import *
@@ -19,9 +20,28 @@ from symbolTable import *
 import sys
 
 
+class MyErrorListener(ErrorListener):
+    def __init__(self):
+        super(MyErrorListener, self).__init__()
+
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        print(str(line) + ":" + str(column) + ": sintaxis ERROR encontrado, " +
+              str(msg))
+        sys.exit()
+
+    """ def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
+        print("Ambiguity ERROR, " + str(configs))
+        sys.exit()
+
+    def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
+        print("Context ERROR, " + str(configs))
+        sys.exit()"""
+
+
 class decafAlejandroPrinter(decafAlejandroListener):
     """
     Clase encargada de los métodos generados por ANTLR
+    # primera vuelta
     """
 
     def __init__(self) -> None:
@@ -30,10 +50,21 @@ class decafAlejandroPrinter(decafAlejandroListener):
         self.scopeActual = "global"
         self.scopeAnterior = "global"
 
+    def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
+        return super().enterStatement(ctx)
+
+    def exitProgram(self, ctx: decafAlejandroParser.ProgramContext):
+        diccionarioFinal = self.tablaSimbolos.getDictVar()
+        print(diccionarioFinal)
+
     def enterMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
         # actualizamos el scope
         self.scopeAnterior = self.scopeActual
         self.scopeActual = ctx.method_name().getText()
+
+    def exitMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
+        # actualizamos el scope cuando salimso de la funcion
+        self.scopeActual = self.scopeAnterior
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
         name = ctx.field_var()[0].getText()  # el nombre de la variable
@@ -41,10 +72,49 @@ class decafAlejandroPrinter(decafAlejandroListener):
         line = ctx.start.line
         column = ctx.start.column
         scope = self.scopeActual
+        arrayValue = ""
+        # condicion por si es un array
+        if("[" in name and "]" in name):
+            name = name[0]
+            arrayValue = ctx.field_var()[0].array_id().expr().getText()
 
+        if(self.functions.checkIfIsInt(arrayValue)):
+            # valor declarado dentro del array
+            arrayValue = int(arrayValue)
+            claseError = Errores(name, column, line, "")
+            hasError, errorValue = claseError.checkArrayError(
+                arrayValue, False)
+            if(hasError):
+                print(errorValue)
+                exit()
+        else:
+            oldArrayValue = arrayValue
+            varExistsInner, arrayValue = self.tablaSimbolos.checkVarInVarSymbolTable(
+                arrayValue)
+            if(varExistsInner):
+                tipoDato = self.tablaSimbolos.getTypeVarDictVar(oldArrayValue)
+                claseError = Errores(name, column, line, tipoDato)
+                hasError, errorValue = claseError.checkArrayError(
+                    arrayValue, True)
+                if(hasError):
+                    print(errorValue)
+                    exit()
+            else:
+                print(
+                    f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
+                exit()
+
+        varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(name, scope)
+        if(varExists == False):
+            self.tablaSimbolos.AddNewVar_DictVar(name, tipo, scope, 0, 0)
+        elif(varExists == True):
+            print(
+                f'Error, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
+            exit()
+        # ya tenemos las variables actuales
         print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
 
-    def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
+    """ def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
         name = ctx.ID().getText()  # el nombre del array
         column = ctx.start.column
         line = ctx.start.line
@@ -74,7 +144,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
             else:
                 print(
                     f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
-                exit()
+                exit() """
 
     """  def enterMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
 
@@ -120,6 +190,8 @@ def main():
     stream = CommonTokenStream(lexer)
     # invocamos al parser
     parser = decafAlejandroParser(stream)
+    parser.removeErrorListeners()
+    parser.addErrorListener(MyErrorListener())
     # invocamos al arbol
     tree = parser.program()
     # ? invocamos al printer, este printer es nuestra CLASE declarada arriba

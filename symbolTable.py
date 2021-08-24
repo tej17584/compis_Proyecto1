@@ -16,22 +16,39 @@ import json
 
 class symbolTables():
     def __init__(self) -> None:
-        # {"a" : ["int", "y"], "b": ["char", "y"]}
+        # {1 : ["a", int", "y"], "b": ["char", "y"]}
         self.dictStructs = {}
-        # {"a" : ["int", "main", 4 ]}
-        self.dictVars = {"asssss": ["int", "main", 10, 0]}
-        # {"main":["void", ["param1", "param2"]]}
+        # {1 : ["a", int", "main", 4 ]}
+        self.dictVars = {}
+        # {1: :["main", "void", ["param1", "param2"]]}
         self.dictMethods = {}
         self.functions = funciones()  # funciones necesarias y varias
+        self.contadorGlobalDictVars = 0
+        self.contadorGlobalDictMethods = 0
+        self.contadorGlobalDictStructs = 0
+
+    def getDictVar(self):
+        return self.dictVars
+
+    def getVarIDVarDictVar(self, varID):
+        """
+        Dada un varID, retorna el nombre de la variable si existe en la tabla de variables.
+        *@param: varID: el id de la variable a checar el tipo
+        """
+        for numeroTupla, valorTupla in self.dictVars.items():
+            if(valorTupla[0] == varID):
+                return valorTupla[0]  # retornamos el nombre de la tabla
+
+        return ""
 
     def getTypeVarDictVar(self, varID):
         """
         Dada un varID, retorna el tipo si existe en la tabla de variables.
         *@param: varID: el id de la variable a checar el tipo
         """
-        for variableID, valor in self.dictVars.items():
-            if(variableID == varID):
-                return valor[0]  # retornamos el VALOR de la tabla
+        for numeroTupla, valorTupla in self.dictVars.items():
+            if(valorTupla[0] == varID):
+                return valorTupla[1]  # retornamos el tipo de la tabla
 
         return ""
 
@@ -40,9 +57,9 @@ class symbolTables():
         Dada un varID, retorna el valor si existe en la tabla de variables.
         *@param: varID: el id de la variable a checar
         """
-        for variableID, valor in self.dictVars.items():
-            if(variableID == varID):
-                return valor[1]  # retornamos el VALOR de la tabla
+        for numeroTupla, valorTupla in self.dictVars.items():
+            if(valorTupla[0] == varID):
+                return valorTupla[2]  # retornamos el scope de la tabla
 
         return ""
 
@@ -51,10 +68,9 @@ class symbolTables():
         Dada un varID, retorna el valor si existe en la tabla de variables.
         *@param: varID: el id de la variable a checar
         """
-        for variableID, valor in self.dictVars.items():
-            if(variableID == varID):
-                return valor[2]  # retornamos el VALOR de la tabla
-
+        for numeroTupla, valorTupla in self.dictVars.items():
+            if(valorTupla[0] == varID):
+                return valorTupla[3]  # retornamos el valor de la tabla
         return ""
 
     def getOffsetVarDictVar(self, varID):
@@ -62,11 +78,31 @@ class symbolTables():
         Dada un varID, retorna el valor si existe en la tabla de variables.
         *@param: varID: el id de la variable a checar
         """
-        for variableID, valor in self.dictVars.items():
-            if(variableID == varID):
-                return valor[3]  # retornamos el VALOR de la tabla
+        for numeroTupla, valorTupla in self.dictVars.items():
+            if(valorTupla[0] == varID):
+                return valorTupla[4]  # retornamos el offset de la tabla
 
         return ""
+
+    def AddNewVar_DictVar(self, varID="", varType="", methodID="", valor=0, offset=0):
+        """
+        Agrega una nueva tupla a la tabla de simbolos.
+        *@param: varID: el nombre de la variable
+        *@param: varType: el tipo de la variable
+        *@param: methodID: el método  o scope al que pertenece de la variable
+        *@param: valor: el valor de la variable
+        *@param: offset: el offset de la variable
+        """
+        existsEntry = self.checkVarInVarSymbolTableV2(varID, methodID)
+        # colocamos en el orden especificado
+        arraynuevo = [varID, varType, methodID, valor, offset]
+        # si la entrada NO existe
+        if(existsEntry == False):
+            # agregamos una nueva entrada al diccionario
+            self.dictVars[self.contadorGlobalDictVars] = arraynuevo
+            self.contadorGlobalDictVars += 1
+        else:
+            print("Error a nivel de tabla de simbolos. La entrada ya existe.")
 
     def checkVarInVarSymbolTable(self, variable):
         """
@@ -74,8 +110,34 @@ class symbolTables():
         Si existe, retorna TRUE y el valor de esa variable. Si no, retorna False
         *@param: variable: la variable a verificar en la tabla de simbolos
         """
-        for nombreVariable, valores in self.dictVars.items():
-            if(str(variable) == str(nombreVariable)):
+        for numeroTupla, valorTupla in self.dictVars.items():
+            if(str(variable) == str(valorTupla[0])):
                 return True, self.getValorVarDictVar(variable)
 
         return False, ""
+
+    def checkVarInVarSymbolTableV2(self, variable, scope):
+        """
+        Revisa si una variable dada EXISTE en la tabla de simbolos de variables
+        Si existe, retorna TRUE. Si no, retorna False
+        *@param: variable: la variable a verificar en la tabla de simbolos
+        *@param: scope: elscope de la variable, ya que podemos tener dos distintas
+        """
+        existsDictVar, existsDictMethods, lineVar, lineMethods = False, False, 0, 0
+        for numeroTupla, valorTupla in self.dictVars.items():
+            if(str(variable) == str(valorTupla[0])):
+                existsDictVar = True
+                lineVar = numeroTupla
+
+        for numeroTupla, valorTupla in self.dictVars.items():
+            if(str(scope) == valorTupla[2]):
+                existsDictMethods = True
+                lineMethods = numeroTupla
+
+        if((existsDictVar == True and existsDictMethods == True)):
+            if(lineMethods == lineVar):
+                return True
+            else:
+                return False
+        else:
+            return False
