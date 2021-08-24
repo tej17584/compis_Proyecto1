@@ -57,6 +57,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
         diccionarioFinal = self.tablaSimbolos.getDictVar()
         print(diccionarioFinal)
 
+    def enterStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
+        # actualizamos el scope
+        self.scopeAnterior = self.scopeActual
+        self.scopeActual = ctx.ID().getText()
+
+    def exitStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
+        # actualizamos el scope cuando salimso de la funcion
+        self.scopeActual = self.scopeAnterior
+
     def enterMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
         # actualizamos el scope
         self.scopeAnterior = self.scopeActual
