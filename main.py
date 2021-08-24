@@ -118,6 +118,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
             varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
                 name, scope)
             if(varExists == False):
+                if("struct" in tipo):
+                    tipo = tipo.replace("struct", "")
                 self.tablaSimbolos.AddNewVar_DictVar(name, tipo, scope, 0, 0)
             elif(varExists == True):
                 print(
