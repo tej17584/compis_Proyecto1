@@ -9,6 +9,7 @@ V 1.0
 """
 
 # ZONA DE IMPORTS
+from antlr4.tree.Tree import Tree
 from funciones import *
 import sys
 import json
@@ -123,21 +124,12 @@ class symbolTables():
         *@param: variable: la variable a verificar en la tabla de simbolos
         *@param: scope: elscope de la variable, ya que podemos tener dos distintas
         """
-        existsDictVar, existsDictMethods, lineVar, lineMethods = False, False, 0, 0
+        existsDictVar = False
         for numeroTupla, valorTupla in self.dictVars.items():
-            if(str(variable) == str(valorTupla[0])):
+            if((str(variable) == str(valorTupla[0])) and (str(scope) == valorTupla[2])):
                 existsDictVar = True
-                lineVar = numeroTupla
 
-        for numeroTupla, valorTupla in self.dictVars.items():
-            if(str(scope) == valorTupla[2]):
-                existsDictMethods = True
-                lineMethods = numeroTupla
-
-        if((existsDictVar == True and existsDictMethods == True)):
-            if(lineMethods == lineVar):
-                return True
-            else:
-                return False
+        if((existsDictVar == True)):
+            return True
         else:
             return False

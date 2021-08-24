@@ -67,52 +67,55 @@ class decafAlejandroPrinter(decafAlejandroListener):
         self.scopeActual = self.scopeAnterior
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
-        name = ctx.field_var()[0].getText()  # el nombre de la variable
-        tipo = ctx.var_type()[0].getText()
-        line = ctx.start.line
-        column = ctx.start.column
-        scope = self.scopeActual
-        arrayValue = ""
-        # condicion por si es un array
-        if("[" in name and "]" in name):
-            name = name[0]
-            arrayValue = ctx.field_var()[0].array_id().expr().getText()
+        for x in range(len(ctx.field_var())):
+            name = ctx.field_var()[x].getText()  # el nombre de la variable
+            tipo = ctx.var_type()[x].getText()
+            line = ctx.start.line
+            column = ctx.start.column
+            scope = self.scopeActual
+            arrayValue = ""
+            # condicion por si es un array
+            if("[" in name and "]" in name):
+                name = name[0]
+                arrayValue = ctx.field_var()[x].array_id().expr().getText()
 
-        if(self.functions.checkIfIsInt(arrayValue)):
-            # valor declarado dentro del array
-            arrayValue = int(arrayValue)
-            claseError = Errores(name, column, line, "")
-            hasError, errorValue = claseError.checkArrayError(
-                arrayValue, False)
-            if(hasError):
-                print(errorValue)
-                exit()
-        else:
-            oldArrayValue = arrayValue
-            varExistsInner, arrayValue = self.tablaSimbolos.checkVarInVarSymbolTable(
-                arrayValue)
-            if(varExistsInner):
-                tipoDato = self.tablaSimbolos.getTypeVarDictVar(oldArrayValue)
-                claseError = Errores(name, column, line, tipoDato)
-                hasError, errorValue = claseError.checkArrayError(
-                    arrayValue, True)
-                if(hasError):
-                    print(errorValue)
-                    exit()
-            else:
+                if(self.functions.checkIfIsInt(arrayValue)):
+                    # valor declarado dentro del array
+                    arrayValue = int(arrayValue)
+                    claseError = Errores(name, column, line, "")
+                    hasError, errorValue = claseError.checkArrayError(
+                        arrayValue, False)
+                    if(hasError):
+                        print(errorValue)
+                        exit()
+                else:
+                    oldArrayValue = arrayValue
+                    varExistsInner, arrayValue = self.tablaSimbolos.checkVarInVarSymbolTable(
+                        arrayValue)
+                    if(varExistsInner):
+                        tipoDato = self.tablaSimbolos.getTypeVarDictVar(
+                            oldArrayValue)
+                        claseError = Errores(name, column, line, tipoDato)
+                        hasError, errorValue = claseError.checkArrayError(
+                            arrayValue, True)
+                        if(hasError):
+                            print(errorValue)
+                            exit()
+                    else:
+                        print(
+                            f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
+                        exit()
+
+            varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                name, scope)
+            if(varExists == False):
+                self.tablaSimbolos.AddNewVar_DictVar(name, tipo, scope, 0, 0)
+            elif(varExists == True):
                 print(
-                    f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
+                    f'Error, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
                 exit()
-
-        varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(name, scope)
-        if(varExists == False):
-            self.tablaSimbolos.AddNewVar_DictVar(name, tipo, scope, 0, 0)
-        elif(varExists == True):
-            print(
-                f'Error, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
-            exit()
-        # ya tenemos las variables actuales
-        print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
+            # ya tenemos las variables actuales
+            print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
 
     """ def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
         name = ctx.ID().getText()  # el nombre del array
