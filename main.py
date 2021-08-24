@@ -29,14 +29,6 @@ class MyErrorListener(ErrorListener):
               str(msg))
         sys.exit()
 
-    """ def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
-        print("Ambiguity ERROR, " + str(configs))
-        sys.exit()
-
-    def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
-        print("Context ERROR, " + str(configs))
-        sys.exit()"""
-
 
 class decafAlejandroPrinter(decafAlejandroListener):
     """
