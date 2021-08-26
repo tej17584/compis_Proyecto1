@@ -4,8 +4,8 @@ class Program
 
     void main()
     {
-        int x;
-		x = "wanda";
+        string s[10];
+		s[1] = '22';
     }
 
 

@@ -116,8 +116,7 @@ HEX_LITERAL: '0' [xX][0-9a-fA-F]+;
 
 BOOL_LITERAL: TRUE | FALSE;
 
-STRING_LITERAL: ('"' ( ALPHA)* '"')
-	| (APOSTROPHE ( ALPHA)* APOSTROPHE);
+STRING_LITERAL: '"' ( '\\' [btnfr"'\\] | ~[\r\n\\"])* '"';
 
 ALPHA_NUM: ALPHA | DIGIT;
 
@@ -211,7 +210,7 @@ eq_op: EQUALITY_OP | UNEQUALITY_OP;
 
 cond_op: AND | OR;
 
-literal: int_literal | STRING_LITERAL | BOOL_LITERAL;
+literal: int_literal | CHAR_LITERAL | BOOL_LITERAL;
 
 bin_op: arith_op | rel_op | eq_op | cond_op;
 

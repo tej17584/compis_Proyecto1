@@ -73,6 +73,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
         line = ctx.start.line
         column = ctx.start.column
         scope = self.scopeActual
+        if("[" in name and "]" in name):
+            name = name[0]
         varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
             name, scope)
         # verificamos si existe en el scope actual
@@ -97,14 +99,14 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     valorAsignado, tipoGuardado)
                 if(typeMatch == False):
                     print(
-                        f'ERROR. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                        f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
                     exit()
                 else:
                     print("PRINT GLOBAL")
 
             elif(varExists2 == False):
                 print(
-                    f'ERROR. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada')
+                    f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada')
                 exit()
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
