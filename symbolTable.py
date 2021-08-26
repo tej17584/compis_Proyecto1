@@ -28,7 +28,11 @@ class symbolTables():
         self.contadorGlobalDictMethods = 0
         self.contadorGlobalDictStructs = 0
 
+    # ! ------------------------- METODOS DE DICCIONARIO DE METODOS ---------
     def getDictVar(self):
+        """
+        Retorna el diccionario de variables
+        """
         return self.dictVars
 
     def getVarIDVarDictVar(self, varID):
@@ -87,7 +91,7 @@ class symbolTables():
 
     def AddNewVar_DictVar(self, varID="", varType="", methodID="", valor=0, offset=0):
         """
-        Agrega una nueva tupla a la tabla de simbolos.
+        Agrega una nueva tupla a la tabla de simbolos de la tabla de VARIABLES
         *@param: varID: el nombre de la variable
         *@param: varType: el tipo de la variable
         *@param: methodID: el método  o scope al que pertenece de la variable
@@ -133,3 +137,77 @@ class symbolTables():
             return True
         else:
             return False
+
+    # ! ------------------------- METODOS DE DICCIONARIO DE METODOS ---------
+    def getDictMethod(self):
+        """
+        Retorna el diccionario de métodos
+        """
+        return self.dictMethods
+
+    def checkMethodInMethodSymbolTableV2(self, methodName):
+        """
+        Revisa si un método existe en la tabla de métodos,sino retonar FALSE. Sino TRUe
+        *@param: methodName: el nombre del método
+        """
+        existsMethod = False
+        for numeroTupla, valorTupla in self.dictMethods.items():
+            if(str(methodName) == str(valorTupla[1])):
+                existsMethod = True
+
+        if((existsMethod == True)):
+            return True
+        else:
+            return False
+
+    def AddNewMethod_DictMethod(self, methodType="", methodName="", parametros=[], returnValue=""):
+        """
+        Agrega una nueva tupla a la tabla de simbolos de la tabla de METODOS
+        *@param: methodType: el tipo de método, como void
+        *@param: methodName: el nombre del método -> como main
+        *@param: parametros: un array con sus parámetros
+        *@param: returnValue: el valor que planea retornar o el tipo, sino vacío
+        """
+        existsEntry = self.checkMethodInMethodSymbolTableV2(methodName)
+        # colocamos en el orden especificado
+        arraynuevo = [methodType, methodName, parametros, returnValue]
+        # si la entrada NO existe
+        if(existsEntry == False):
+            # agregamos una nueva entrada al diccionario
+            self.dictMethods[self.contadorGlobalDictMethods] = arraynuevo
+            self.contadorGlobalDictMethods += 1
+        else:
+            print("Error a nivel de tabla de simbolos. La entrada del método ya existe.")
+
+    def getTypeMethodDictMethods(self, methodName):
+        """
+        Retorna el tipo de método
+        *@param: methodName: el nombre del método
+        """
+        for numeroTupla, valorTupla in self.dictMethods.items():
+            if(str(methodName) == str(valorTupla[1])):
+                return valorTupla[0]
+
+        return ""
+
+    def getParametersDictMethods(self, methodName):
+        """
+        Retorna los parámetros del método mandado
+        *@param: methodName: el nombre del método
+        """
+        for numeroTupla, valorTupla in self.dictMethods.items():
+            if(str(methodName) == str(valorTupla[1])):
+                return valorTupla[2]
+
+        return []
+
+    def getReturnDictMethods(self, methodName):
+        """
+        Retorna el tipo de return de un metodo
+        *@param: methodName: el nombre del método
+        """
+        for numeroTupla, valorTupla in self.dictMethods.items():
+            if(str(methodName) == str(valorTupla[1])):
+                return valorTupla[3]
+
+        return ""

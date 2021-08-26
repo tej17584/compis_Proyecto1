@@ -46,6 +46,19 @@ class decafAlejandroPrinter(decafAlejandroListener):
         return super().enterStatement(ctx)
 
     def exitProgram(self, ctx: decafAlejandroParser.ProgramContext):
+        # ! verificamos la logica de la definicion de main sin parametros
+        mainMethodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
+            "main")
+        tipoMetodo = self.tablaSimbolos.getTypeMethodDictMethods("main")
+        parametros = self.tablaSimbolos.getParametersDictMethods("main")
+        returnValue = self.tablaSimbolos.getReturnDictMethods("main")
+        if(mainMethodExists == True and tipoMetodo == "void" and len(parametros) == 0 and returnValue == ""):
+            pass
+        else:
+            print(
+                f'ERROR. No está declarado el método main sin parámetros')
+            exit()
+
         diccionarioFinal = self.tablaSimbolos.getDictVar()
         print(diccionarioFinal)
 
