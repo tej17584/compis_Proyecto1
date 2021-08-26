@@ -1,16 +1,12 @@
 class Program
 {
 
-	struct A
-	{
-		int a;
-	};
 
-struct B
+
+void main()
 {
-	int a;
-	struct A c;
-};
-
+	string a;
+	a = '2';
+}
 
 }

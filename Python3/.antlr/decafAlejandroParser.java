@@ -153,7 +153,7 @@ public class decafAlejandroParser extends Parser {
 			setState(60);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << INT) | (1L << VOID) | (1L << STRUCT))) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << INT) | (1L << STRING) | (1L << VOID) | (1L << STRUCT))) != 0)) {
 				{
 				{
 				setState(57);
@@ -561,7 +561,7 @@ public class decafAlejandroParser extends Parser {
 			setState(119);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << INT) | (1L << STRUCT))) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << INT) | (1L << STRING) | (1L << STRUCT))) != 0)) {
 				{
 				{
 				setState(116);
@@ -640,13 +640,14 @@ public class decafAlejandroParser extends Parser {
 			setState(143);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << INT) | (1L << VOID) | (1L << STRUCT))) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << INT) | (1L << STRING) | (1L << VOID) | (1L << STRUCT))) != 0)) {
 				{
 				setState(132);
 				_errHandler.sync(this);
 				switch (_input.LA(1)) {
 				case BOOLEAN:
 				case INT:
+				case STRING:
 				case STRUCT:
 					{
 					{
@@ -726,6 +727,7 @@ public class decafAlejandroParser extends Parser {
 			switch (_input.LA(1)) {
 			case BOOLEAN:
 			case INT:
+			case STRING:
 			case STRUCT:
 				{
 				setState(148);
@@ -787,7 +789,7 @@ public class decafAlejandroParser extends Parser {
 			setState(156);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << INT) | (1L << STRUCT))) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << INT) | (1L << STRING) | (1L << STRUCT))) != 0)) {
 				{
 				{
 				setState(153);
@@ -1811,6 +1813,7 @@ public class decafAlejandroParser extends Parser {
 	public static class Var_typeContext extends ParserRuleContext {
 		public TerminalNode INT() { return getToken(decafAlejandroParser.INT, 0); }
 		public TerminalNode BOOLEAN() { return getToken(decafAlejandroParser.BOOLEAN, 0); }
+		public TerminalNode STRING() { return getToken(decafAlejandroParser.STRING, 0); }
 		public TerminalNode STRUCT() { return getToken(decafAlejandroParser.STRUCT, 0); }
 		public TerminalNode ID() { return getToken(decafAlejandroParser.ID, 0); }
 		public Struct_declrContext struct_declr() {
@@ -1826,7 +1829,7 @@ public class decafAlejandroParser extends Parser {
 		Var_typeContext _localctx = new Var_typeContext(_ctx, getState());
 		enterRule(_localctx, 48, RULE_var_type);
 		try {
-			setState(315);
+			setState(316);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,30,_ctx) ) {
 			case 1:
@@ -1847,15 +1850,22 @@ public class decafAlejandroParser extends Parser {
 				enterOuterAlt(_localctx, 3);
 				{
 				setState(312);
-				match(STRUCT);
-				setState(313);
-				match(ID);
+				match(STRING);
 				}
 				break;
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
+				setState(313);
+				match(STRUCT);
 				setState(314);
+				match(ID);
+				}
+				break;
+			case 5:
+				enterOuterAlt(_localctx, 5);
+				{
+				setState(315);
 				struct_declr();
 				}
 				break;
@@ -1889,7 +1899,7 @@ public class decafAlejandroParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(317);
+			setState(318);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << EQUAL_OP) | (1L << ADD_eq_op) | (1L << SUB_eq_op))) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -1926,7 +1936,7 @@ public class decafAlejandroParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(319);
+			setState(320);
 			match(ID);
 			}
 		}
@@ -1957,7 +1967,7 @@ public class decafAlejandroParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3>\u0144\4\2\t\2\4"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3>\u0145\4\2\t\2\4"+
 		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
 		"\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
@@ -1980,27 +1990,27 @@ public class decafAlejandroParser extends Parser {
 		"\3\20\3\20\3\20\7\20\u0117\n\20\f\20\16\20\u011a\13\20\3\21\3\21\5\21"+
 		"\u011e\n\21\3\22\3\22\5\22\u0122\n\22\3\23\3\23\3\24\3\24\3\25\3\25\3"+
 		"\26\3\26\3\27\3\27\3\27\5\27\u012f\n\27\3\30\3\30\3\30\3\30\5\30\u0135"+
-		"\n\30\3\31\3\31\3\32\3\32\3\32\3\32\3\32\5\32\u013e\n\32\3\33\3\33\3\34"+
-		"\3\34\3\34\2\3\36\35\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60"+
-		"\62\64\66\2\b\4\2\64\64\66\66\3\2\'*\3\2./\3\2$%\3\2\37#\3\2+-\2\u015a"+
-		"\28\3\2\2\2\4G\3\2\2\2\6I\3\2\2\2\bW\3\2\2\2\nb\3\2\2\2\fl\3\2\2\2\16"+
-		"n\3\2\2\2\20s\3\2\2\2\22\177\3\2\2\2\24\u0098\3\2\2\2\26\u009a\3\2\2\2"+
-		"\30\u00de\3\2\2\2\32\u00e0\3\2\2\2\34\u0102\3\2\2\2\36\u0110\3\2\2\2 "+
-		"\u011d\3\2\2\2\"\u0121\3\2\2\2$\u0123\3\2\2\2&\u0125\3\2\2\2(\u0127\3"+
-		"\2\2\2*\u0129\3\2\2\2,\u012e\3\2\2\2.\u0134\3\2\2\2\60\u0136\3\2\2\2\62"+
-		"\u013d\3\2\2\2\64\u013f\3\2\2\2\66\u0141\3\2\2\289\7\3\2\29:\7\4\2\2:"+
-		">\7\26\2\2;=\5\4\3\2<;\3\2\2\2=@\3\2\2\2><\3\2\2\2>?\3\2\2\2?A\3\2\2\2"+
-		"@>\3\2\2\2AB\7\27\2\2B\3\3\2\2\2CH\5\20\t\2DH\5\6\4\2EH\5\22\n\2FH\5\b"+
-		"\5\2GC\3\2\2\2GD\3\2\2\2GE\3\2\2\2GF\3\2\2\2H\5\3\2\2\2IJ\5\62\32\2JK"+
-		"\5\f\7\2KR\3\2\2\2LM\7\34\2\2MN\5\62\32\2NO\5\f\7\2OQ\3\2\2\2PL\3\2\2"+
-		"\2QT\3\2\2\2RP\3\2\2\2RS\3\2\2\2SU\3\2\2\2TR\3\2\2\2UV\7\25\2\2V\7\3\2"+
-		"\2\2WX\5\62\32\2X]\5\f\7\2YZ\7\34\2\2Z\\\5\f\7\2[Y\3\2\2\2\\_\3\2\2\2"+
-		"][\3\2\2\2]^\3\2\2\2^`\3\2\2\2_]\3\2\2\2`a\7\25\2\2a\t\3\2\2\2bc\7\61"+
-		"\2\2cd\7\30\2\2de\5\36\20\2eh\7\31\2\2fg\7\60\2\2gi\5 \21\2hf\3\2\2\2"+
-		"hi\3\2\2\2i\13\3\2\2\2jm\5\16\b\2km\5\n\6\2lj\3\2\2\2lk\3\2\2\2m\r\3\2"+
-		"\2\2nq\7\61\2\2op\7\60\2\2pr\5 \21\2qo\3\2\2\2qr\3\2\2\2r\17\3\2\2\2s"+
-		"t\7\23\2\2tu\7\61\2\2uy\7\26\2\2vx\5\6\4\2wv\3\2\2\2x{\3\2\2\2yw\3\2\2"+
-		"\2yz\3\2\2\2z|\3\2\2\2{y\3\2\2\2|}\7\27\2\2}~\7\25\2\2~\21\3\2\2\2\177"+
+		"\n\30\3\31\3\31\3\32\3\32\3\32\3\32\3\32\3\32\5\32\u013f\n\32\3\33\3\33"+
+		"\3\34\3\34\3\34\2\3\36\35\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&"+
+		"(*,.\60\62\64\66\2\b\4\2\64\64\66\66\3\2\'*\3\2./\3\2$%\3\2\37#\3\2+-"+
+		"\2\u015c\28\3\2\2\2\4G\3\2\2\2\6I\3\2\2\2\bW\3\2\2\2\nb\3\2\2\2\fl\3\2"+
+		"\2\2\16n\3\2\2\2\20s\3\2\2\2\22\177\3\2\2\2\24\u0098\3\2\2\2\26\u009a"+
+		"\3\2\2\2\30\u00de\3\2\2\2\32\u00e0\3\2\2\2\34\u0102\3\2\2\2\36\u0110\3"+
+		"\2\2\2 \u011d\3\2\2\2\"\u0121\3\2\2\2$\u0123\3\2\2\2&\u0125\3\2\2\2(\u0127"+
+		"\3\2\2\2*\u0129\3\2\2\2,\u012e\3\2\2\2.\u0134\3\2\2\2\60\u0136\3\2\2\2"+
+		"\62\u013e\3\2\2\2\64\u0140\3\2\2\2\66\u0142\3\2\2\289\7\3\2\29:\7\4\2"+
+		"\2:>\7\26\2\2;=\5\4\3\2<;\3\2\2\2=@\3\2\2\2><\3\2\2\2>?\3\2\2\2?A\3\2"+
+		"\2\2@>\3\2\2\2AB\7\27\2\2B\3\3\2\2\2CH\5\20\t\2DH\5\6\4\2EH\5\22\n\2F"+
+		"H\5\b\5\2GC\3\2\2\2GD\3\2\2\2GE\3\2\2\2GF\3\2\2\2H\5\3\2\2\2IJ\5\62\32"+
+		"\2JK\5\f\7\2KR\3\2\2\2LM\7\34\2\2MN\5\62\32\2NO\5\f\7\2OQ\3\2\2\2PL\3"+
+		"\2\2\2QT\3\2\2\2RP\3\2\2\2RS\3\2\2\2SU\3\2\2\2TR\3\2\2\2UV\7\25\2\2V\7"+
+		"\3\2\2\2WX\5\62\32\2X]\5\f\7\2YZ\7\34\2\2Z\\\5\f\7\2[Y\3\2\2\2\\_\3\2"+
+		"\2\2][\3\2\2\2]^\3\2\2\2^`\3\2\2\2_]\3\2\2\2`a\7\25\2\2a\t\3\2\2\2bc\7"+
+		"\61\2\2cd\7\30\2\2de\5\36\20\2eh\7\31\2\2fg\7\60\2\2gi\5 \21\2hf\3\2\2"+
+		"\2hi\3\2\2\2i\13\3\2\2\2jm\5\16\b\2km\5\n\6\2lj\3\2\2\2lk\3\2\2\2m\r\3"+
+		"\2\2\2nq\7\61\2\2op\7\60\2\2pr\5 \21\2qo\3\2\2\2qr\3\2\2\2r\17\3\2\2\2"+
+		"st\7\23\2\2tu\7\61\2\2uy\7\26\2\2vx\5\6\4\2wv\3\2\2\2x{\3\2\2\2yw\3\2"+
+		"\2\2yz\3\2\2\2z|\3\2\2\2{y\3\2\2\2|}\7\27\2\2}~\7\25\2\2~\21\3\2\2\2\177"+
 		"\u0080\5\24\13\2\u0080\u0081\5\66\34\2\u0081\u0091\7\32\2\2\u0082\u0083"+
 		"\5\62\32\2\u0083\u0084\5\16\b\2\u0084\u0087\3\2\2\2\u0085\u0087\7\22\2"+
 		"\2\u0086\u0082\3\2\2\2\u0086\u0085\3\2\2\2\u0087\u008e\3\2\2\2\u0088\u0089"+
@@ -2063,13 +2073,14 @@ public class decafAlejandroParser extends Parser {
 		"\u012e\u012c\3\2\2\2\u012e\u012d\3\2\2\2\u012f-\3\2\2\2\u0130\u0135\5"+
 		"\60\31\2\u0131\u0135\5&\24\2\u0132\u0135\5(\25\2\u0133\u0135\5*\26\2\u0134"+
 		"\u0130\3\2\2\2\u0134\u0131\3\2\2\2\u0134\u0132\3\2\2\2\u0134\u0133\3\2"+
-		"\2\2\u0135/\3\2\2\2\u0136\u0137\t\6\2\2\u0137\61\3\2\2\2\u0138\u013e\7"+
-		"\16\2\2\u0139\u013e\7\f\2\2\u013a\u013b\7\23\2\2\u013b\u013e\7\61\2\2"+
-		"\u013c\u013e\5\20\t\2\u013d\u0138\3\2\2\2\u013d\u0139\3\2\2\2\u013d\u013a"+
-		"\3\2\2\2\u013d\u013c\3\2\2\2\u013e\63\3\2\2\2\u013f\u0140\t\7\2\2\u0140"+
-		"\65\3\2\2\2\u0141\u0142\7\61\2\2\u0142\67\3\2\2\2!>GR]hlqy\u0086\u008e"+
-		"\u0091\u0098\u009e\u00a4\u00ba\u00cf\u00d5\u00d8\u00de\u00e7\u00ea\u00fb"+
-		"\u00fe\u0102\u0110\u0118\u011d\u0121\u012e\u0134\u013d";
+		"\2\2\u0135/\3\2\2\2\u0136\u0137\t\6\2\2\u0137\61\3\2\2\2\u0138\u013f\7"+
+		"\16\2\2\u0139\u013f\7\f\2\2\u013a\u013f\7\17\2\2\u013b\u013c\7\23\2\2"+
+		"\u013c\u013f\7\61\2\2\u013d\u013f\5\20\t\2\u013e\u0138\3\2\2\2\u013e\u0139"+
+		"\3\2\2\2\u013e\u013a\3\2\2\2\u013e\u013b\3\2\2\2\u013e\u013d\3\2\2\2\u013f"+
+		"\63\3\2\2\2\u0140\u0141\t\7\2\2\u0141\65\3\2\2\2\u0142\u0143\7\61\2\2"+
+		"\u0143\67\3\2\2\2!>GR]hlqy\u0086\u008e\u0091\u0098\u009e\u00a4\u00ba\u00cf"+
+		"\u00d5\u00d8\u00de\u00e7\u00ea\u00fb\u00fe\u0102\u0110\u0118\u011d\u0121"+
+		"\u012e\u0134\u013e";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

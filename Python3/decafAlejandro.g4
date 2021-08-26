@@ -216,7 +216,7 @@ bin_op: arith_op | rel_op | eq_op | cond_op;
 
 arith_op: ADD | SUB | MULTIPLY | DIVIDE | REMINDER;
 
-var_type: INT | BOOLEAN | STRUCT ID | struct_declr;
+var_type: INT | BOOLEAN | STRING | STRUCT ID | struct_declr;
 
 assign_op: EQUAL_OP | ADD_eq_op | SUB_eq_op;
 

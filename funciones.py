@@ -122,3 +122,18 @@ class funciones():
             return True
         except:
             return False
+
+    def checkGeneraltype(self, valor, tipo):
+        """
+        Chequea si un valor es numero o letra
+        *@param: valor: el valor a testear
+        *@param: tipo: el tipo de variable
+        """
+        if(tipo == "int"):
+            return self.checkIfIsInt(valor)
+        elif(tipo == "bool" or tipo == "boolean"):
+            return isinstance(valor, bool)
+        elif(tipo == "string"):
+            return isinstance(valor, str)
+        else:
+            return "UNDEFINED"

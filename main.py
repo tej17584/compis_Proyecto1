@@ -67,6 +67,46 @@ class decafAlejandroPrinter(decafAlejandroListener):
         # actualizamos el scope cuando salimso de la funcion
         self.scopeActual = self.scopeAnterior
 
+    def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
+        name = ctx.location().getText()  # el nombre de la variable
+        valorAsignado = ctx.expr().getText()
+        line = ctx.start.line
+        column = ctx.start.column
+        scope = self.scopeActual
+        varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+            name, scope)
+        # verificamos si existe en el scope actual
+        if(varExists):
+            tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(name)
+            typeMatch = self.functions.checkGeneraltype(
+                valorAsignado, tipoGuardado)
+            if(typeMatch == False):
+                print(
+                    f'ERROR. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                exit()
+            else:
+                print("PRINT LOCAL")
+        else:
+            # si no existe en el scope actual, revismos en el global
+            varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                name, "global")
+            if(varExists2):
+                # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+                tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(name)
+                typeMatch = self.functions.checkGeneraltype(
+                    valorAsignado, tipoGuardado)
+                if(typeMatch == False):
+                    print(
+                        f'ERROR. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                    exit()
+                else:
+                    print("PRINT GLOBAL")
+
+            elif(varExists2 == False):
+                print(
+                    f'ERROR. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada')
+                exit()
+
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
         for x in range(len(ctx.field_var())):
             name = ctx.field_var()[x].getText()  # el nombre de la variable
@@ -118,7 +158,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     f'Error, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
                 exit()
             # ya tenemos las variables actuales
-            print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
+            # print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
 
     """ def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
         name = ctx.ID().getText()  # el nombre del array
