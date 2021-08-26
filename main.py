@@ -82,7 +82,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 valorAsignado, tipoGuardado)
             if(typeMatch == False):
                 print(
-                    f'ERROR. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                    f'ERROR. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
                 exit()
             else:
                 print("PRINT LOCAL")

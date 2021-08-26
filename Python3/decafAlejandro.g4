@@ -106,7 +106,7 @@ ID: ALPHA ALPHA_NUM*; // for variable name
 ALPHA: [a-zA-Z_];
 
 CHAR_LITERAL:
-	APOSTROPHE ('\\' [btnfr"'\\] | ~[\r\n\\"]) APOSTROPHE;
+	APOSTROPHE ('\\' [btnfr"'\\] | ~[\r\n\\"])* APOSTROPHE;
 
 DECIMAL_LITERAL: [0-9]+;
 
@@ -116,7 +116,8 @@ HEX_LITERAL: '0' [xX][0-9a-fA-F]+;
 
 BOOL_LITERAL: TRUE | FALSE;
 
-STRING_LITERAL: '"' ( '\\' [btnfr"'\\] | ~[\r\n\\"])* '"';
+STRING_LITERAL: ('"' ( ALPHA)* '"')
+	| (APOSTROPHE ( ALPHA)* APOSTROPHE);
 
 ALPHA_NUM: ALPHA | DIGIT;
 
@@ -210,7 +211,7 @@ eq_op: EQUALITY_OP | UNEQUALITY_OP;
 
 cond_op: AND | OR;
 
-literal: int_literal | CHAR_LITERAL | BOOL_LITERAL;
+literal: int_literal | STRING_LITERAL | BOOL_LITERAL;
 
 bin_op: arith_op | rel_op | eq_op | cond_op;
 

@@ -2,11 +2,12 @@ class Program
 {
 
 
+    void main()
+    {
+        int x;
+		x = "wanda";
+    }
 
-void main()
-{
-	string a;
-	a = '2';
-}
 
+	
 }

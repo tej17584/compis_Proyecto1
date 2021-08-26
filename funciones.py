@@ -129,11 +129,18 @@ class funciones():
         *@param: valor: el valor a testear
         *@param: tipo: el tipo de variable
         """
-        if(tipo == "int"):
-            return self.checkIfIsInt(valor)
-        elif(tipo == "bool" or tipo == "boolean"):
-            return isinstance(valor, bool)
-        elif(tipo == "string"):
-            return isinstance(valor, str)
+        if("'" in valor):
+            if(tipo == "string"):
+                return isinstance(valor, str)
+            else:
+                return False
         else:
-            return "UNDEFINED"
+            if(tipo == "int"):
+                return self.checkIfIsInt(valor)
+            elif(tipo == "bool" or tipo == "boolean"):
+                if(valor == "true" or valor == "false"):
+                    return True
+                else:
+                    return False
+            else:
+                return False

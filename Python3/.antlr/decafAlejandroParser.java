@@ -1101,7 +1101,7 @@ public class decafAlejandroParser extends Parser {
 			setState(232);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << CALLOUT) | (1L << LROUND) | (1L << SUB) | (1L << NOT) | (1L << ID) | (1L << CHAR_LITERAL) | (1L << DECIMAL_LITERAL) | (1L << HEX_LITERAL) | (1L << BOOL_LITERAL))) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << CALLOUT) | (1L << LROUND) | (1L << SUB) | (1L << NOT) | (1L << ID) | (1L << DECIMAL_LITERAL) | (1L << HEX_LITERAL) | (1L << BOOL_LITERAL) | (1L << STRING_LITERAL))) != 0)) {
 				{
 				setState(224);
 				expr(0);
@@ -1438,31 +1438,21 @@ public class decafAlejandroParser extends Parser {
 		try {
 			setState(287);
 			_errHandler.sync(this);
-			switch (_input.LA(1)) {
-			case CALLOUT:
-			case LROUND:
-			case SUB:
-			case NOT:
-			case ID:
-			case CHAR_LITERAL:
-			case DECIMAL_LITERAL:
-			case HEX_LITERAL:
-			case BOOL_LITERAL:
+			switch ( getInterpreter().adaptivePredict(_input,27,_ctx) ) {
+			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(285);
 				expr(0);
 				}
 				break;
-			case STRING_LITERAL:
+			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(286);
 				match(STRING_LITERAL);
 				}
 				break;
-			default:
-				throw new NoViableAltException(this);
 			}
 		}
 		catch (RecognitionException re) {
@@ -1638,7 +1628,7 @@ public class decafAlejandroParser extends Parser {
 		public Int_literalContext int_literal() {
 			return getRuleContext(Int_literalContext.class,0);
 		}
-		public TerminalNode CHAR_LITERAL() { return getToken(decafAlejandroParser.CHAR_LITERAL, 0); }
+		public TerminalNode STRING_LITERAL() { return getToken(decafAlejandroParser.STRING_LITERAL, 0); }
 		public TerminalNode BOOL_LITERAL() { return getToken(decafAlejandroParser.BOOL_LITERAL, 0); }
 		public LiteralContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -1661,11 +1651,11 @@ public class decafAlejandroParser extends Parser {
 				int_literal();
 				}
 				break;
-			case CHAR_LITERAL:
+			case STRING_LITERAL:
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(298);
-				match(CHAR_LITERAL);
+				match(STRING_LITERAL);
 				}
 				break;
 			case BOOL_LITERAL:
@@ -2069,18 +2059,18 @@ public class decafAlejandroParser extends Parser {
 		"\u0121\u011f\3\2\2\2\u0121\u0120\3\2\2\2\u0122#\3\2\2\2\u0123\u0124\t"+
 		"\2\2\2\u0124%\3\2\2\2\u0125\u0126\t\3\2\2\u0126\'\3\2\2\2\u0127\u0128"+
 		"\t\4\2\2\u0128)\3\2\2\2\u0129\u012a\t\5\2\2\u012a+\3\2\2\2\u012b\u012f"+
-		"\5$\23\2\u012c\u012f\7\63\2\2\u012d\u012f\7\67\2\2\u012e\u012b\3\2\2\2"+
-		"\u012e\u012c\3\2\2\2\u012e\u012d\3\2\2\2\u012f-\3\2\2\2\u0130\u0135\5"+
-		"\60\31\2\u0131\u0135\5&\24\2\u0132\u0135\5(\25\2\u0133\u0135\5*\26\2\u0134"+
-		"\u0130\3\2\2\2\u0134\u0131\3\2\2\2\u0134\u0132\3\2\2\2\u0134\u0133\3\2"+
-		"\2\2\u0135/\3\2\2\2\u0136\u0137\t\6\2\2\u0137\61\3\2\2\2\u0138\u013f\7"+
-		"\16\2\2\u0139\u013f\7\f\2\2\u013a\u013f\7\17\2\2\u013b\u013c\7\23\2\2"+
-		"\u013c\u013f\7\61\2\2\u013d\u013f\5\20\t\2\u013e\u0138\3\2\2\2\u013e\u0139"+
-		"\3\2\2\2\u013e\u013a\3\2\2\2\u013e\u013b\3\2\2\2\u013e\u013d\3\2\2\2\u013f"+
-		"\63\3\2\2\2\u0140\u0141\t\7\2\2\u0141\65\3\2\2\2\u0142\u0143\7\61\2\2"+
-		"\u0143\67\3\2\2\2!>GR]hlqy\u0086\u008e\u0091\u0098\u009e\u00a4\u00ba\u00cf"+
-		"\u00d5\u00d8\u00de\u00e7\u00ea\u00fb\u00fe\u0102\u0110\u0118\u011d\u0121"+
-		"\u012e\u0134\u013e";
+		"\5$\23\2\u012c\u012f\78\2\2\u012d\u012f\7\67\2\2\u012e\u012b\3\2\2\2\u012e"+
+		"\u012c\3\2\2\2\u012e\u012d\3\2\2\2\u012f-\3\2\2\2\u0130\u0135\5\60\31"+
+		"\2\u0131\u0135\5&\24\2\u0132\u0135\5(\25\2\u0133\u0135\5*\26\2\u0134\u0130"+
+		"\3\2\2\2\u0134\u0131\3\2\2\2\u0134\u0132\3\2\2\2\u0134\u0133\3\2\2\2\u0135"+
+		"/\3\2\2\2\u0136\u0137\t\6\2\2\u0137\61\3\2\2\2\u0138\u013f\7\16\2\2\u0139"+
+		"\u013f\7\f\2\2\u013a\u013f\7\17\2\2\u013b\u013c\7\23\2\2\u013c\u013f\7"+
+		"\61\2\2\u013d\u013f\5\20\t\2\u013e\u0138\3\2\2\2\u013e\u0139\3\2\2\2\u013e"+
+		"\u013a\3\2\2\2\u013e\u013b\3\2\2\2\u013e\u013d\3\2\2\2\u013f\63\3\2\2"+
+		"\2\u0140\u0141\t\7\2\2\u0141\65\3\2\2\2\u0142\u0143\7\61\2\2\u0143\67"+
+		"\3\2\2\2!>GR]hlqy\u0086\u008e\u0091\u0098\u009e\u00a4\u00ba\u00cf\u00d5"+
+		"\u00d8\u00de\u00e7\u00ea\u00fb\u00fe\u0102\u0110\u0118\u011d\u0121\u012e"+
+		"\u0134\u013e";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {
