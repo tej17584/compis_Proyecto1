@@ -1,9 +1,10 @@
 class Program
 {
 	boolean ss;
-    void main()
+    void main(int a, int b)
     {
 		ss = false;
     }
+
 
 }

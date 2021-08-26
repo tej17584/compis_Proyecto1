@@ -46,6 +46,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
         return super().enterStatement(ctx)
 
     def exitProgram(self, ctx: decafAlejandroParser.ProgramContext):
+        diccionarioFinal = self.tablaSimbolos.getDictVar()
+        print(diccionarioFinal)
         # ! verificamos la logica de la definicion de main sin parametros
         mainMethodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
             "main")
@@ -58,9 +60,6 @@ class decafAlejandroPrinter(decafAlejandroListener):
             print(
                 f'ERROR. No está declarado el método main sin parámetros')
             exit()
-
-        diccionarioFinal = self.tablaSimbolos.getDictVar()
-        print(diccionarioFinal)
 
     def enterStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
         # actualizamos el scope
@@ -75,13 +74,27 @@ class decafAlejandroPrinter(decafAlejandroListener):
         # actualizamos el scope
         self.scopeAnterior = self.scopeActual
         self.scopeActual = ctx.method_name().getText()
+        #! agregamos los métodos
+        name = ctx.method_name().getText()  # el nombre de la variable
+        tipo = ctx.return_type().getText()
+        parametros = ctx.var_id()
+        print("parametros", parametros[0].getText())
+        methodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
+            name)
+        if(methodExists == False):
+            self.tablaSimbolos.AddNewMethod_DictMethod(tipo, name,)
+        print("La variable existe", methodExists)
 
     def exitMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
         # actualizamos el scope cuando salimso de la funcion
         self.scopeActual = self.scopeAnterior
 
     def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
-        name = ctx.location().getText()  # el nombre de la variable
+        name = ""
+        try:
+            name = ctx.location().getText()  # el nombre de la variable
+        except:
+            pass
         valorAsignado = ctx.expr().getText()
         line = ctx.start.line
         column = ctx.start.column
