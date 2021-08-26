@@ -79,7 +79,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
             name, scope)
         # verificamos si existe en el scope actual
         if(varExists):
-            tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(name)
+            tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(name, scope)
             typeMatch = self.functions.checkGeneraltype(
                 valorAsignado, tipoGuardado)
             if(typeMatch == False):
@@ -94,7 +94,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 name, "global")
             if(varExists2):
                 # si existe en el global, verificamos que el tipo con el que fue guardado haga match
-                tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(name)
+                tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
+                    name,  "global")
                 typeMatch = self.functions.checkGeneraltype(
                     valorAsignado, tipoGuardado)
                 if(typeMatch == False):
@@ -134,10 +135,10 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 else:
                     oldArrayValue = arrayValue
                     varExistsInner, arrayValue = self.tablaSimbolos.checkVarInVarSymbolTable(
-                        arrayValue)
+                        arrayValue, self.scopeActual)
                     if(varExistsInner):
                         tipoDato = self.tablaSimbolos.getTypeVarDictVar(
-                            oldArrayValue)
+                            oldArrayValue, scope)
                         claseError = Errores(name, column, line, tipoDato)
                         hasError, errorValue = claseError.checkArrayError(
                             arrayValue, True)

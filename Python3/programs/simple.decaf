@@ -1,13 +1,9 @@
 class Program
 {
-
-
+	boolean ss;
     void main()
     {
-        string s[10];
-		s[1] = '22';
+		ss = false;
     }
 
-
-	
 }
