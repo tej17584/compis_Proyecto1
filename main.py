@@ -78,16 +78,25 @@ class decafAlejandroPrinter(decafAlejandroListener):
         self.scopeAnterior = self.scopeActual
         self.scopeActual = ctx.method_name().getText()
         # miramos si tiene return
-        """ returnValue = ""
+        returnValue = ""
+        returnExpresion = ""
         try:
             # el nombre de la variable
             returnValue = ctx.block().statement()[0].expr().getText()
         except:
             pass
-        print("Valor de retorno ", returnValue) """
+        try:
+            # el valor de return
+            returnExpresion = ctx.block().statement()[0].RETURN().getText()
+        except:
+            pass
+        print("Valor de retorno ", returnValue)
+        print("palabra return ", returnExpresion,
+              " tipo: ", type(returnExpresion))
         #! agregamos los métodos
         name = ctx.method_name().getText()  # el nombre del método
         tipo = ctx.return_type().getText()
+        print("El tipo de metodo es", tipo)
         parametros = ctx.var_id()
         tiposVariables = ctx.var_type()
         line = ctx.start.line
@@ -98,6 +107,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
         if(methodExists == False):
             # ahora miramos los parametros
             parametrosToAdd = []
+            methodReturnsThings = False
             for x in range(0, len(parametros)):
                 # agregamos al array para guardarlo
                 variable = parametros[x].getText()
@@ -116,9 +126,16 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         f'Error, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
                     exit()
                 print("parametros", parametros[x].getText())
-            # una vez guardados parametros y variables, ahora guardamos la nueva entrada del diccionario
+            if(returnExpresion == "return" and returnValue != ""):
+                methodReturnsThings = True
+            if(tipo != "void"):
+                if(returnExpresion == "" or returnValue == ""):
+                    print(
+                        f'ERROR. El método {name} no esta retornando nada. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
+                    exit()
+                # una vez guardados parametros y variables, ahora guardamos la nueva entrada del diccionario
             self.tablaSimbolos.AddNewMethod_DictMethod(
-                tipo, name, parametrosToAdd)
+                tipo, name, parametrosToAdd, methodReturnsThings)
         else:
             print(
                 f'Error, el método {name} ya fue declarado anteriormente. Linea: {line} columna: {column} ')
@@ -149,23 +166,37 @@ class decafAlejandroPrinter(decafAlejandroListener):
             else:
                 value = ctx.expr().getText()
                 arrayVars = []
-                for i in range(len(value)):
-                    var = self.tablaSimbolos.getTypeVarDictVar(
-                        value[i], self.scopeActual)
-                    if isinstance(var, str) and len(var) > 0:
-                        arrayVars.append(var)
-                    if not len(set(arrayVars)) <= 1:
-                        print(
-                            f'ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
-                        exit()
-                e = ""
-                if(len(arrayVars) > 0):
-                    e = next(iter(arrayVars))
-                # obtenemos el tipo de método
-                if(methodTypeFromTable != e):
+                if((value == "true" or value == "false") and methodTypeFromTable != "boolean"):
                     print(
-                        f'ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        f'ERROR. Variable boolean retornada en un método NO booleano "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                     exit()
+                elif(self.functions.checkIfIsInt(value) and methodTypeFromTable != "int"):
+                    print(
+                        f'ERROR. Variable int retornada en un método NO INT "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    exit()
+                elif(self.functions.checkGeneraltype(value, "string") and methodTypeFromTable != "string"):
+                    print(
+                        f'ERROR. Variable string retornada en un método NO STRING "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    exit()
+
+                if(self.functions.checkIfIsInt(value) == False and value != "false" and value != "true" and self.functions.checkGeneraltype(value, "string") == False):
+                    for i in range(len(value)):
+                        var = self.tablaSimbolos.getTypeVarDictVar(
+                            value[i], self.scopeActual)
+                        if isinstance(var, str) and len(var) > 0:
+                            arrayVars.append(var)
+                        if not len(set(arrayVars)) <= 1:
+                            print(
+                                f'ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
+                            exit()
+                    e = ""
+                    if(len(arrayVars) > 0):
+                        e = next(iter(arrayVars))
+                    # obtenemos el tipo de método
+                    if(methodTypeFromTable != e):
+                        print(
+                            f'ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        exit()
 
         else:
             if(ctx.expr().method_call()):
@@ -179,6 +210,10 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 if(methodTypeFromTableV2 == "void"):
                     print(
                         f'ERROR. Un metodo VOID no puede asignarse a una variable. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    exit()
+                if(methodTypeFromTableV2 == ""):
+                    print(
+                        f'ERROR. El método "{metodoAsignado}" NO existe y esta siendo asignado a la variable local "{name}". linea: {ctx.start.line} , columna: {ctx.start.column}')
                     exit()
                 elif(tipoGuardado != methodTypeFromTableV2):
                     print(
@@ -202,7 +237,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         valorAsignado, tipoGuardado)
                     if(typeMatch == False):
                         print(
-                            f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                            f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
                         exit()
                     else:
                         print("")
@@ -219,14 +254,14 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             valorAsignado, tipoGuardado)
                         if(typeMatch == False):
                             print(
-                                f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                                f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
                             exit()
                         else:
                             print("PRINT GLOBAL")
 
                     elif(varExists2 == False):
                         print(
-                            f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada')
+                            f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
                         exit()
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):

@@ -21,7 +21,7 @@ class symbolTables():
         self.dictVars = {}
         # {1 : ["A", "a", "int" ], 2: ["B", "variable", "int"]}
         self.dictStructs = {}
-        # {1: :["main", "void", ["param1", "param2"], ["resultado"]]}
+        # {1: :["main", "void", ["param1", "param2"], [True]]}
         self.dictMethods = {}
         self.functions = funciones()  # funciones necesarias y varias
         self.contadorGlobalDictVars = 0
@@ -164,7 +164,7 @@ class symbolTables():
         else:
             return False
 
-    def AddNewMethod_DictMethod(self, methodType="", methodName="", parametros=[], returnValue=""):
+    def AddNewMethod_DictMethod(self, methodType="", methodName="", parametros=[], returnValue=False):
         """
         Agrega una nueva tupla a la tabla de simbolos de la tabla de METODOS
         *@param: methodType: el tipo de método, como void
@@ -214,4 +214,4 @@ class symbolTables():
             if(str(methodName) == str(valorTupla[1])):
                 return valorTupla[3]
 
-        return ""
+        return False

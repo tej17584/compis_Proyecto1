@@ -4,8 +4,19 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        {
+            "type": "antlr-debug",
+            "request": "launch",
+            "name": "Debug Current Grammar",
+            "input": "Python3/programs/simple.decaf",
+            "visualParseTree": true,
+            "printParseTree": true,
+            "startRule": "program",
+            "grammar": "Python3/decafAlejandro.g4",
+
+        },
+
     {"name":"Python: Current File","type":"python","request":"launch","program":"${file}","console":"integratedTerminal"},
-        
         {
             "name": "Debug ANTLR4 grammar",
             "type": "antlr-debug",
@@ -16,5 +27,7 @@
             "printParseTree": true,
             "visualParseTree": true
             }
+
+
     ]
 }

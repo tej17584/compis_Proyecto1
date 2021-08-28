@@ -1,19 +1,15 @@
 class Program
 {
-   int main2()
+   int patito(int a)
     {
-     int a;
-     int b;
-     return a + b;
 
+      return 1;
     }
 
     void main()
     {
-     string a;
-     string b;
-     b = '2';
-     a = main2();
+     int a;
+     a = patito();
     }
 
 
