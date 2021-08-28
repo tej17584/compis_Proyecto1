@@ -158,56 +158,76 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         print(
                             f'ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
                         exit()
-                e = next(iter(arrayVars))
+                e = ""
+                if(len(arrayVars) > 0):
+                    e = next(iter(arrayVars))
                 # obtenemos el tipo de método
                 if(methodTypeFromTable != e):
                     print(
-                        f'ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado"{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        f'ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                     exit()
 
         else:
-            valorAsignado = ctx.expr().getText()
-            line = ctx.start.line
-            column = ctx.start.column
-            scope = self.scopeActual
-            if("[" in name and "]" in name):
-                name = name[0]
-            varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                name, scope)
-            # verificamos si existe en el scope actual
-            if(varExists):
+            if(ctx.expr().method_call()):
+                metodoAsignado = ctx.expr().method_call().method_call_inter().method_name().getText()
+                # verificamos si deberia poder retornar algo
+                scope = self.scopeActual
+                methodTypeFromTableV2 = self.tablaSimbolos.getTypeMethodDictMethods(
+                    metodoAsignado)
                 tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
                     name, scope)
-                typeMatch = self.functions.checkGeneraltype(
-                    valorAsignado, tipoGuardado)
-                if(typeMatch == False):
+                if(methodTypeFromTableV2 == "void"):
                     print(
-                        f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                        f'ERROR. Un metodo VOID no puede asignarse a una variable. linea: {ctx.start.line} , columna: {ctx.start.column}')
                     exit()
-                else:
-                    print("")
-                    # print("PRINT LOCAL", name)
+                elif(tipoGuardado != methodTypeFromTableV2):
+                    print(
+                        f'ERROR. El método "{metodoAsignado}" tiene un tipo de retorno "{methodTypeFromTableV2}" y la variable local "{name}" es del tipo "{tipoGuardado}" NO CONCUERDAN . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    exit()
+                #print("valor asignado", metodoAsignado)
             else:
-                # si no existe en el scope actual, revismos en el global
-                varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                    name, "global")
-                if(varExists2):
-                    # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+                valorAsignado = ctx.expr().getText()
+                line = ctx.start.line
+                column = ctx.start.column
+                scope = self.scopeActual
+                if("[" in name and "]" in name):
+                    name = name[0]
+                varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                    name, scope)
+                # verificamos si existe en el scope actual
+                if(varExists):
                     tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                        name,  "global")
+                        name, scope)
                     typeMatch = self.functions.checkGeneraltype(
                         valorAsignado, tipoGuardado)
                     if(typeMatch == False):
                         print(
-                            f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                            f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
                         exit()
                     else:
-                        print("PRINT GLOBAL")
+                        print("")
+                        # print("PRINT LOCAL", name)
+                else:
+                    # si no existe en el scope actual, revismos en el global
+                    varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                        name, "global")
+                    if(varExists2):
+                        # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+                        tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
+                            name,  "global")
+                        typeMatch = self.functions.checkGeneraltype(
+                            valorAsignado, tipoGuardado)
+                        if(typeMatch == False):
+                            print(
+                                f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                            exit()
+                        else:
+                            print("PRINT GLOBAL")
 
-                elif(varExists2 == False):
-                    print(
-                        f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada')
-                    exit()
+                    elif(varExists2 == False):
+                        print(
+                            f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada')
+                        exit()
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
         for x in range(len(ctx.field_var())):

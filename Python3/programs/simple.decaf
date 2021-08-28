@@ -1,20 +1,21 @@
 class Program
 {
-    void main()
-    {
-     string a;
-     string b;
-     
-
-    }
-
-    int main2()
+   int main2()
     {
      int a;
      int b;
      return a + b;
 
     }
+
+    void main()
+    {
+     string a;
+     string b;
+     b = '2';
+     a = main2();
+    }
+
 
 
 }
