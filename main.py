@@ -46,8 +46,11 @@ class decafAlejandroPrinter(decafAlejandroListener):
         return super().enterStatement(ctx)
 
     def exitProgram(self, ctx: decafAlejandroParser.ProgramContext):
-        diccionarioFinal = self.tablaSimbolos.getDictVar()
-        print(diccionarioFinal)
+        diccionarioVarsFinal = self.tablaSimbolos.getDictVar()
+        print(diccionarioVarsFinal)
+        print("")
+        diccionarioMethodsFinal = self.tablaSimbolos.getDictMethod()
+        print(diccionarioMethodsFinal)
         # ! verificamos la logica de la definicion de main sin parametros
         mainMethodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
             "main")
@@ -78,11 +81,36 @@ class decafAlejandroPrinter(decafAlejandroListener):
         name = ctx.method_name().getText()  # el nombre de la variable
         tipo = ctx.return_type().getText()
         parametros = ctx.var_id()
-        print("parametros", parametros[0].getText())
+        tiposVariables = ctx.var_type()
+        line = ctx.start.line
+        column = ctx.start.column
+        scope = self.scopeActual
         methodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
             name)
         if(methodExists == False):
-            self.tablaSimbolos.AddNewMethod_DictMethod(tipo, name,)
+            # ahora miramos los parametros
+            parametrosToAdd = []
+            for x in range(0, len(parametros)):
+                # agregamos al array para guardarlo
+                variable = parametros[x].getText()
+                tipoVariable = tiposVariables[x].getText()
+                parametrosToAdd.append(variable)
+                # una vez agregado, ahora vamos a guardar la variable en el scope
+                varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                    variable, scope)
+                if(varExists == False):
+                    if("struct" in tipo):
+                        tipo = tipo.replace("struct", "")
+                    self.tablaSimbolos.AddNewVar_DictVar(
+                        variable, tipoVariable, scope, 0, 0)
+                elif(varExists == True):
+                    print(
+                        f'Error, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
+                    exit()
+                print("parametros", parametros[x].getText())
+            # una vez guardados parametros y variables, ahora guardamos la nueva entrada del diccionario
+            self.tablaSimbolos.AddNewMethod_DictMethod(
+                tipo, name, parametrosToAdd)
         print("La variable existe", methodExists)
 
     def exitMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
