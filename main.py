@@ -77,6 +77,14 @@ class decafAlejandroPrinter(decafAlejandroListener):
         # actualizamos el scope
         self.scopeAnterior = self.scopeActual
         self.scopeActual = ctx.method_name().getText()
+        # miramos si tiene return
+        """ returnValue = ""
+        try:
+            # el nombre de la variable
+            returnValue = ctx.block().statement()[0].expr().getText()
+        except:
+            pass
+        print("Valor de retorno ", returnValue) """
         #! agregamos los métodos
         name = ctx.method_name().getText()  # el nombre de la variable
         tipo = ctx.return_type().getText()
@@ -111,58 +119,76 @@ class decafAlejandroPrinter(decafAlejandroListener):
             # una vez guardados parametros y variables, ahora guardamos la nueva entrada del diccionario
             self.tablaSimbolos.AddNewMethod_DictMethod(
                 tipo, name, parametrosToAdd)
-        print("La variable existe", methodExists)
+        #print("La variable existe", methodExists)
 
     def exitMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
         # actualizamos el scope cuando salimso de la funcion
         self.scopeActual = self.scopeAnterior
 
     def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
-        name = ""
-        try:
-            name = ctx.location().getText()  # el nombre de la variable
-        except:
-            pass
-        valorAsignado = ctx.expr().getText()
-        line = ctx.start.line
-        column = ctx.start.column
-        scope = self.scopeActual
-        if("[" in name and "]" in name):
-            name = name[0]
-        varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-            name, scope)
-        # verificamos si existe en el scope actual
-        if(varExists):
-            tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(name, scope)
-            typeMatch = self.functions.checkGeneraltype(
-                valorAsignado, tipoGuardado)
-            if(typeMatch == False):
-                print(
-                    f'ERROR. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
-                exit()
-            else:
-                print("PRINT LOCAL")
+        # validaciones para que no entre por gusto
+        hasReturnValue = self.functions.hasReturnValue(ctx)
+        # si tiene valor de retorno
+        if(hasReturnValue):
+            value = ctx.expr().getText()
+            arrayVars = []
+            for i in range(len(value)):
+                var = self.tablaSimbolos.getTypeVarDictVar(
+                    value[i], self.scopeActual)
+                if isinstance(var, str) and len(var) > 0:
+                    arrayVars.append(var)
+                if not len(set(arrayVars)) <= 1:
+                    print(
+                        f'ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
+                    exit()
         else:
-            # si no existe en el scope actual, revismos en el global
-            varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                name, "global")
-            if(varExists2):
-                # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+            name = ""
+            try:
+                name = ctx.location().getText()  # el nombre de la variable
+            except:
+                pass
+            valorAsignado = ctx.expr().getText()
+            line = ctx.start.line
+            column = ctx.start.column
+            scope = self.scopeActual
+            if("[" in name and "]" in name):
+                name = name[0]
+            varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                name, scope)
+            # verificamos si existe en el scope actual
+            if(varExists):
                 tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                    name,  "global")
+                    name, scope)
                 typeMatch = self.functions.checkGeneraltype(
                     valorAsignado, tipoGuardado)
                 if(typeMatch == False):
                     print(
-                        f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                        f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
                     exit()
                 else:
-                    print("PRINT GLOBAL")
+                    print("")
+                    #print("PRINT LOCAL", name)
+            else:
+                # si no existe en el scope actual, revismos en el global
+                varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                    name, "global")
+                if(varExists2):
+                    # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+                    tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
+                        name,  "global")
+                    typeMatch = self.functions.checkGeneraltype(
+                        valorAsignado, tipoGuardado)
+                    if(typeMatch == False):
+                        print(
+                            f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO')
+                        exit()
+                    else:
+                        print("PRINT GLOBAL")
 
-            elif(varExists2 == False):
-                print(
-                    f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada')
-                exit()
+                elif(varExists2 == False):
+                    print(
+                        f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada')
+                    exit()
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
         for x in range(len(ctx.field_var())):

@@ -144,3 +144,14 @@ class funciones():
                     return False
             else:
                 return False
+
+    def hasReturnValue(self, contexto):
+        """
+        Chequea si el statement tiene valor de retorno o no
+        *@param: contexto: el contexto
+        """
+        tieneValorRetorn = contexto.RETURN()
+        if(tieneValorRetorn != None):
+            return True
+        else:
+            return False

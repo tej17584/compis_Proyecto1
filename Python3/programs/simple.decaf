@@ -1,11 +1,11 @@
 class Program
 {
-	boolean ss;
-    void main(int a, string b)
+    void main()
     {
-      boolean ss;
-      string a;
-		 
+     string a;
+     string b;
+     return a + b;
+
     }
 
 

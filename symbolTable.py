@@ -35,13 +35,14 @@ class symbolTables():
         """
         return self.dictVars
 
-    def getVarIDVarDictVar(self, varID):
+    def getVarIDVarDictVar(self, varID, scope):
         """
         Dada un varID, retorna el nombre de la variable si existe en la tabla de variables.
         *@param: varID: el id de la variable a checar el tipo
+        *@param: scope: el scope actual
         """
         for numeroTupla, valorTupla in self.dictVars.items():
-            if(valorTupla[0] == varID):
+            if(valorTupla[0] == varID and (str(scope) == valorTupla[2])):
                 return valorTupla[0]  # retornamos el nombre de la tabla
 
         return ""
@@ -50,6 +51,7 @@ class symbolTables():
         """
         Dada un varID, retorna el tipo si existe en la tabla de variables.
         *@param: varID: el id de la variable a checar el tipo
+        *@param: scope: el scope actual
         """
         for numeroTupla, valorTupla in self.dictVars.items():
             if((str(varID) == str(valorTupla[0])) and (str(scope) == valorTupla[2])):
@@ -72,6 +74,7 @@ class symbolTables():
         """
         Dada un varID, retorna el valor si existe en la tabla de variables.
         *@param: varID: el id de la variable a checar
+        *@param: scope: el scope actual
         """
         for numeroTupla, valorTupla in self.dictVars.items():
             if((str(varID) == str(valorTupla[0])) and (str(scope) == valorTupla[2])):
@@ -82,6 +85,7 @@ class symbolTables():
         """
         Dada un varID, retorna el valor si existe en la tabla de variables.
         *@param: varID: el id de la variable a checar
+        *@param: scope: el scope actual
         """
         for numeroTupla, valorTupla in self.dictVars.items():
             if((str(varID) == str(valorTupla[0])) and (str(scope) == valorTupla[2])):
