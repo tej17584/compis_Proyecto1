@@ -86,7 +86,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
             pass
         print("Valor de retorno ", returnValue) """
         #! agregamos los métodos
-        name = ctx.method_name().getText()  # el nombre de la variable
+        name = ctx.method_name().getText()  # el nombre del método
         tipo = ctx.return_type().getText()
         parametros = ctx.var_id()
         tiposVariables = ctx.var_type()
@@ -119,7 +119,11 @@ class decafAlejandroPrinter(decafAlejandroListener):
             # una vez guardados parametros y variables, ahora guardamos la nueva entrada del diccionario
             self.tablaSimbolos.AddNewMethod_DictMethod(
                 tipo, name, parametrosToAdd)
-        #print("La variable existe", methodExists)
+        else:
+            print(
+                f'Error, el método {name} ya fue declarado anteriormente. Linea: {line} columna: {column} ')
+            exit()
+        # print("La variable existe", methodExists)
 
     def exitMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
         # actualizamos el scope cuando salimso de la funcion
@@ -128,25 +132,40 @@ class decafAlejandroPrinter(decafAlejandroListener):
     def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
         # validaciones para que no entre por gusto
         hasReturnValue = self.functions.hasReturnValue(ctx)
+        name = ""
+        try:
+            name = ctx.location().getText()  # el nombre de la variable
+        except:
+            pass
         # si tiene valor de retorno
         if(hasReturnValue):
-            value = ctx.expr().getText()
-            arrayVars = []
-            for i in range(len(value)):
-                var = self.tablaSimbolos.getTypeVarDictVar(
-                    value[i], self.scopeActual)
-                if isinstance(var, str) and len(var) > 0:
-                    arrayVars.append(var)
-                if not len(set(arrayVars)) <= 1:
+            # verificamos si deberia poder retornar algo
+            methodTypeFromTable = self.tablaSimbolos.getTypeMethodDictMethods(
+                self.scopeActual)
+            if(methodTypeFromTable == "void"):
+                print(
+                    f'ERROR. Un método tipo VOID no puede devolver algo. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
+                exit()
+            else:
+                value = ctx.expr().getText()
+                arrayVars = []
+                for i in range(len(value)):
+                    var = self.tablaSimbolos.getTypeVarDictVar(
+                        value[i], self.scopeActual)
+                    if isinstance(var, str) and len(var) > 0:
+                        arrayVars.append(var)
+                    if not len(set(arrayVars)) <= 1:
+                        print(
+                            f'ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
+                        exit()
+                e = next(iter(arrayVars))
+                # obtenemos el tipo de método
+                if(methodTypeFromTable != e):
                     print(
-                        f'ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
+                        f'ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado"{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                     exit()
+
         else:
-            name = ""
-            try:
-                name = ctx.location().getText()  # el nombre de la variable
-            except:
-                pass
             valorAsignado = ctx.expr().getText()
             line = ctx.start.line
             column = ctx.start.column
@@ -167,7 +186,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     exit()
                 else:
                     print("")
-                    #print("PRINT LOCAL", name)
+                    # print("PRINT LOCAL", name)
             else:
                 # si no existe en el scope actual, revismos en el global
                 varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
