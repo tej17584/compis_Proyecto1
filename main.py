@@ -245,7 +245,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
                             nombreParametro, self.scopeActual)
                         tipoParametrosEnviar.append(tipoParametro)
-                    #print("TIPOS DAODS ", tipoParametrosEnviar)
+                    # print("TIPOS DAODS ", tipoParametrosEnviar)
                     if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
                         print(
                             f'ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
@@ -292,7 +292,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 if(interTry == "true" or interTry == "false"):
                                     tipoParametroEnviado = "boolean"
                                 else:
-                                    tipoParametroEnviado = "string"
+                                    tipoParametroEnviado = "variable"
                             except:
                                 pass
                             try:
@@ -301,10 +301,26 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 tipoParametroEnviado = "int"
                             except:
                                 pass
+                            try:
+                                interTry = parametrosEnviados[x].literal(
+                                ).getText()
+                                tipoParametroEnviado = "string"
+                            except:
+                                pass
 
-                            if(tipoParametroEnviado == "string" or tipoParametroEnviado == "boolean"):
+                            if(tipoParametroEnviado == "variable" or tipoParametroEnviado == "boolean"):
                                 nombreParametro = parametrosEnviados[x].location(
                                 ).var_id().getText()
+                                tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
+                                    nombreParametro, self.scopeActual)
+                                tipoParametroG = self.tablaSimbolos.getTypeVarDictVar(
+                                    nombreParametro, "global")
+                                tipoParametrosEnviar.append(tipoParametro)
+                                tipoParametrosEnviarGlobal.append(
+                                    tipoParametroG)
+                            elif(tipoParametroEnviado == "string"):
+                                nombreParametro = parametrosEnviados[x].literal(
+                                ).getText()
                                 tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
                                     nombreParametro, self.scopeActual)
                                 tipoParametroG = self.tablaSimbolos.getTypeVarDictVar(
@@ -322,7 +338,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 tipoParametrosEnviar.append(tipoParametro)
                                 tipoParametrosEnviarGlobal.append(
                                     tipoParametroG)
-                    #print("TIPOS DAODS ", tipoParametrosEnviar)
+                    # print("TIPOS DAODS ", tipoParametrosEnviar)
                     if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
                         print(
                             f'ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
