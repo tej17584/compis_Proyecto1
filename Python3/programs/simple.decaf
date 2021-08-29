@@ -1,26 +1,6 @@
 class Program
 {
 
-int a;
-int b;
-
-
-void OutputInt(int n)
-{
-}
-
-int InputInt(void)
-{return 0;}
-
-
-void Test(string a, int b, int c, int d)
-{
-	
-	OutputInt(b);
-	OutputInt(c);
-	OutputInt(d);
-
-}
 
 
 
@@ -28,19 +8,18 @@ void Test(string a, int b, int c, int d)
 void main(void)
 {
 
-	a = 3;
-	b = 4;
-	
-	OutputInt(a);
-	Test('peperoni',6,7,8);
+	int a;
+	a = 2;
+	if (a==3)
+	{
+		int b;
+		b = 5;
+		
+	}
 
-
 	
-	OutputInt(b);
 
 }
-
-
 
 
 
