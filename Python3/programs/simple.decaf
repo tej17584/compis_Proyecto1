@@ -1,19 +1,42 @@
 class Program
 {
-   string patito(string a, boolean b, int s)
-    {
 
-      return '1';
-    }
+int a;
+int b;
 
-    void main()
-    {
-     string c;
-     string a;
-     boolean b;
-     int e;
-     c = patito( patito,a, b, e);
-    }
+
+void OutputInt(int n)
+{
+}
+
+int InputInt(void)
+{return 0;}
+
+void Test(int a, int b, int c, int d)
+{
+	
+	OutputInt(b);
+	OutputInt(c);
+	OutputInt(d);
+
+}
+
+
+void main(void)
+{
+
+	a = 3;
+	b = 4;
+	
+
+	Test(a,a,a,a);
+
+
+	
+
+}
+
+
 
 
 

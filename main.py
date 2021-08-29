@@ -196,7 +196,18 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         exit()
 
         else:
-            if(ctx.expr().method_call()):
+            methodCallAsignacion = ""
+            mehtodCallNormal = ""
+            try:
+                methodCallAsignacion = ctx.expr().method_call()
+            except:
+                pass
+            try:
+                mehtodCallNormal = ctx.method_call()
+            except:
+                pass
+            # este if es para ver si la llamada a un método es con asignacion
+            if(methodCallAsignacion != None and methodCallAsignacion != ""):
                 metodoAsignado = ctx.expr().method_call().method_call_inter().method_name().getText()
                 # verificamos si deberia poder retornar algo
                 scope = self.scopeActual
@@ -249,6 +260,88 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             print(
                                 f'ERROR. Un parámetro enviado al método "{metodoAsignado}" NO ha sido DECLARADO.linea: {ctx.start.line} , columna: {ctx.start.column}')
                             exit()
+            # este if es para ver si la llamada a un metodo es sin asignacion, solo normalmente
+            elif(mehtodCallNormal != None and mehtodCallNormal != ""):
+                metodoAsignado = ctx.method_call().method_call_inter().method_name().getText()
+                # verificamos si deberia poder retornar algo
+                scope = self.scopeActual
+                methodTypeFromTableV2 = self.tablaSimbolos.getTypeMethodDictMethods(
+                    metodoAsignado)
+                if(methodTypeFromTableV2 == ""):
+                    print(
+                        f'ERRORA2. El método "{metodoAsignado}" NO existe "{name}". linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    exit()
+                # ahora verificamos que si necesita parámetros
+                parametrosMetodo = []
+                parametrosEnviados = ""  # variable para ver si NOSOTROS estamos mandando parametros
+                parametrosMetodo = self.tablaSimbolos.getParametersTypeDictMethods(
+                    metodoAsignado)
+                if(len(parametrosMetodo) > 0):
+                    nombreParametro = ""
+                    tipoParametrosEnviar = []
+                    tipoParametrosEnviarGlobal = []
+                    # print("tipos parámetros esperados por el método ",
+                    #      parametrosMetodo)
+                    tipoParametroEnviado = ""
+                    parametrosEnviados = ctx.method_call().method_call_inter().expr()
+                    if(len(parametrosEnviados) > 0):
+                        for x in range(0, len(parametrosEnviados)):
+                            try:
+                                interTry = parametrosEnviados[x].location(
+                                ).var_id().getText()
+                                if(interTry == "true" or interTry == "false"):
+                                    tipoParametroEnviado = "boolean"
+                                else:
+                                    tipoParametroEnviado = "string"
+                            except:
+                                pass
+                            try:
+                                interTry = parametrosEnviados[x].literal(
+                                ).int_literal()
+                                tipoParametroEnviado = "int"
+                            except:
+                                pass
+
+                            if(tipoParametroEnviado == "string" or tipoParametroEnviado == "boolean"):
+                                nombreParametro = parametrosEnviados[x].location(
+                                ).var_id().getText()
+                                tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
+                                    nombreParametro, self.scopeActual)
+                                tipoParametroG = self.tablaSimbolos.getTypeVarDictVar(
+                                    nombreParametro, "global")
+                                tipoParametrosEnviar.append(tipoParametro)
+                                tipoParametrosEnviarGlobal.append(
+                                    tipoParametroG)
+                            elif(tipoParametroEnviado == "int"):
+                                nombreParametro = parametrosEnviados[x].literal(
+                                ).int_literal().getText()
+                                tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
+                                    nombreParametro, self.scopeActual)
+                                tipoParametroG = self.tablaSimbolos.getTypeVarDictVar(
+                                    nombreParametro, "global")
+                                tipoParametrosEnviar.append(tipoParametro)
+                                tipoParametrosEnviarGlobal.append(
+                                    tipoParametroG)
+                    #print("TIPOS DAODS ", tipoParametrosEnviar)
+                    if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
+                        print(
+                            f'ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        exit()
+                    # Reviosamos localmente
+                    for y in range(0, len(parametrosMetodo)):
+                        if(tipoParametrosEnviar[y] != ""):
+                            if(parametrosMetodo[y] != tipoParametrosEnviar[y]):
+                                print(
+                                    f'ERROR. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                exit()
+                    # revisamos globalmente
+                    for y in range(0, len(parametrosMetodo)):
+                        if(tipoParametrosEnviarGlobal[y] != ""):
+                            if(parametrosMetodo[y] != tipoParametrosEnviarGlobal[y]):
+                                print(
+                                    f'ERROR. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                exit()
+
             else:
                 valorAsignado = ctx.expr().getText()
                 line = ctx.start.line
