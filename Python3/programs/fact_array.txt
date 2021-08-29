@@ -1,7 +1,7 @@
-class Program {
-
-	int factorial(int n)
-	{
+class Program
+{ 
+int factorial(int n)
+{
 	if (n==0)
 	{
 		return 1;
