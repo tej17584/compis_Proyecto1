@@ -90,13 +90,10 @@ class decafAlejandroPrinter(decafAlejandroListener):
             returnExpresion = ctx.block().statement()[0].RETURN().getText()
         except:
             pass
-        print("Valor de retorno ", returnValue)
-        print("palabra return ", returnExpresion,
-              " tipo: ", type(returnExpresion))
         #! agregamos los métodos
         name = ctx.method_name().getText()  # el nombre del método
         tipo = ctx.return_type().getText()
-        print("El tipo de metodo es", tipo)
+        # print("El tipo de metodo es", tipo)
         parametros = ctx.var_id()
         tiposVariables = ctx.var_type()
         line = ctx.start.line
@@ -125,7 +122,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     print(
                         f'Error, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
                     exit()
-                print("parametros", parametros[x].getText())
+                # print("parametros", parametros[x].getText())
             if(returnExpresion == "return" and returnValue != ""):
                 methodReturnsThings = True
             if(tipo != "void"):
@@ -219,7 +216,39 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     print(
                         f'ERROR. El método "{metodoAsignado}" tiene un tipo de retorno "{methodTypeFromTableV2}" y la variable local "{name}" es del tipo "{tipoGuardado}" NO CONCUERDAN . linea: {ctx.start.line} , columna: {ctx.start.column}')
                     exit()
-                #print("valor asignado", metodoAsignado)
+                # ahora verificamos que si necesita parámetros
+                parametrosMetodo = []
+                parametrosEnviados = ""  # variable para ver si NOSOTROS estamos mandando parametros
+                parametrosMetodo = self.tablaSimbolos.getParametersTypeDictMethods(
+                    metodoAsignado)
+                if(len(parametrosMetodo) > 0):
+                    nombreParametro = ""
+                    tipoParametrosEnviar = []
+                    # print("tipos parámetros esperados por el método ",
+                    #      parametrosMetodo)
+                    parametrosEnviados = ctx.expr().method_call(
+                    ).method_call_inter().expr()
+                    for x in range(0, len(parametrosEnviados)):
+                        nombreParametro = parametrosEnviados[x].location(
+                        ).var_id().getText()
+                        tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
+                            nombreParametro, self.scopeActual)
+                        tipoParametrosEnviar.append(tipoParametro)
+                    #print("TIPOS DAODS ", tipoParametrosEnviar)
+                    if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
+                        print(
+                            f'ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        exit()
+                    for y in range(0, len(parametrosMetodo)):
+                        if(tipoParametrosEnviar[y] != ""):
+                            if(parametrosMetodo[y] != tipoParametrosEnviar[y]):
+                                print(
+                                    f'ERROR. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                exit()
+                        else:
+                            print(
+                                f'ERROR. Un parámetro enviado al método "{metodoAsignado}" NO ha sido DECLARADO.linea: {ctx.start.line} , columna: {ctx.start.column}')
+                            exit()
             else:
                 valorAsignado = ctx.expr().getText()
                 line = ctx.start.line

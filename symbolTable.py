@@ -205,6 +205,24 @@ class symbolTables():
 
         return []
 
+    def getParametersTypeDictMethods(self, methodName):
+        """
+        Retorna los parámetros del método mandado
+        *@param: methodName: el nombre del método
+        """
+        parametros = []
+        arrayTipos = []
+        for numeroTupla, valorTupla in self.dictMethods.items():
+            if(str(methodName) == str(valorTupla[1])):
+                parametros = valorTupla[2]
+
+        tipoVariable = ""
+        for x in parametros:
+            tipoVariable = self.getTypeVarDictVar(x, methodName)
+            arrayTipos.append(tipoVariable)
+
+        return arrayTipos
+
     def getReturnDictMethods(self, methodName):
         """
         Retorna el tipo de return de un metodo

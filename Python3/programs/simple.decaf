@@ -1,15 +1,18 @@
 class Program
 {
-   int patito(int a)
+   string patito(string a, boolean b, int s)
     {
 
-      return 1;
+      return '1';
     }
 
     void main()
     {
-     int a;
-     a = patito();
+     string c;
+     string a;
+     boolean b;
+     int e;
+     c = patito( patito,a, b, e);
     }
 
 
