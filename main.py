@@ -305,29 +305,37 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     parametrosEnviados = ctx.method_call().method_call_inter().expr()
                     if(len(parametrosEnviados) > 0):
                         for x in range(0, len(parametrosEnviados)):
-                            try:
-                                interTry = parametrosEnviados[x].location(
-                                ).var_id().getText()
-                                if(interTry == "true" or interTry == "false"):
-                                    tipoParametroEnviado = "boolean"
-                                else:
-                                    tipoParametroEnviado = "variable"
-                            except:
-                                pass
-                            try:
-                                interTry = parametrosEnviados[x].literal(
-                                ).int_literal()
-                                tipoParametroEnviado = "int"
-                            except:
-                                pass
-                            try:
-                                interTry = parametrosEnviados[x].literal(
-                                ).getText()
-                                tipoParametroEnviado = "string"
-                            except:
-                                pass
+                            canTryAgain = True
+                            if(canTryAgain):
+                                try:
+                                    interTry = parametrosEnviados[x].location(
+                                    ).var_id().getText()
+                                    if(interTry == "true" or interTry == "false"):
+                                        tipoParametroEnviado = "boolean"
+                                        canTryAgain = False
+                                    else:
+                                        tipoParametroEnviado = "variable"
+                                        canTryAgain = False
+                                except:
+                                    pass
+                            if(canTryAgain):
+                                try:
+                                    interTry = parametrosEnviados[x].literal(
+                                    ).int_literal().getText()
+                                    tipoParametroEnviado = "int"
+                                    canTryAgain = False
+                                except:
+                                    pass
+                            if(canTryAgain):
+                                try:
+                                    interTry = parametrosEnviados[x].literal(
+                                    ).getText()
+                                    tipoParametroEnviado = "string"
+                                    canTryAgain = False
+                                except:
+                                    pass
 
-                            if(tipoParametroEnviado == "variable" or tipoParametroEnviado == "boolean"):
+                            if(tipoParametroEnviado == "variable"):
                                 nombreParametro = parametrosEnviados[x].location(
                                 ).var_id().getText()
                                 tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
@@ -337,26 +345,21 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 tipoParametrosEnviar.append(tipoParametro)
                                 tipoParametrosEnviarGlobal.append(
                                     tipoParametroG)
+                            elif(tipoParametroEnviado == "boolean"):
+                                nombreParametro = parametrosEnviados[x].location(
+                                ).var_id().getText()
+                                tipoParametrosEnviar.append("boolean")
+                                tipoParametrosEnviarGlobal.append("boolean")
                             elif(tipoParametroEnviado == "string"):
                                 nombreParametro = parametrosEnviados[x].literal(
                                 ).getText()
-                                tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
-                                    nombreParametro, self.scopeActual)
-                                tipoParametroG = self.tablaSimbolos.getTypeVarDictVar(
-                                    nombreParametro, "global")
-                                tipoParametrosEnviar.append(tipoParametro)
-                                tipoParametrosEnviarGlobal.append(
-                                    tipoParametroG)
+                                tipoParametrosEnviar.append("string")
+                                tipoParametrosEnviarGlobal.append("string")
                             elif(tipoParametroEnviado == "int"):
                                 nombreParametro = parametrosEnviados[x].literal(
                                 ).int_literal().getText()
-                                tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
-                                    nombreParametro, self.scopeActual)
-                                tipoParametroG = self.tablaSimbolos.getTypeVarDictVar(
-                                    nombreParametro, "global")
-                                tipoParametrosEnviar.append(tipoParametro)
-                                tipoParametrosEnviarGlobal.append(
-                                    tipoParametroG)
+                                tipoParametrosEnviar.append("int")
+                                tipoParametrosEnviarGlobal.append("int")
                     # print("TIPOS DAODS ", tipoParametrosEnviar)
                     if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
                         print(
@@ -367,14 +370,14 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         if(tipoParametrosEnviar[y] != ""):
                             if(parametrosMetodo[y] != tipoParametrosEnviar[y]):
                                 print(
-                                    f'ERROR. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    f'ERROR1. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
                                 exit()
                     # revisamos globalmente
                     for y in range(0, len(parametrosMetodo)):
                         if(tipoParametrosEnviarGlobal[y] != ""):
                             if(parametrosMetodo[y] != tipoParametrosEnviarGlobal[y]):
                                 print(
-                                    f'ERROR. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    f'ERROR2. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
                                 exit()
 
             else:
