@@ -155,3 +155,28 @@ class funciones():
             return True
         else:
             return False
+
+    def removeOperations(self, operacionPlana):
+        """
+        Remueve los operadores de una expresion y retorna un array con las variables o valores
+        *@param: operacionPlana: la operacion plana
+        """
+        nuevoArray = []
+        if("+" in operacionPlana):
+            operacionPlana = operacionPlana.replace("+", " ")
+        if("-" in operacionPlana):
+            operacionPlana = operacionPlana.replace("-", " ")
+        if("*" in operacionPlana):
+            operacionPlana = operacionPlana.replace("*", " ")
+        if("/" in operacionPlana):
+            operacionPlana = operacionPlana.replace("/", " ")
+        if("%" in operacionPlana):
+            operacionPlana = operacionPlana.replace("%", " ")
+        if("(" in operacionPlana):
+            operacionPlana = operacionPlana.replace("(", "")
+        if(")" in operacionPlana):
+            operacionPlana = operacionPlana.replace(")", "")
+
+        # ahora retornamos el nuevo array
+        nuevoArray = operacionPlana.split(" ")
+        return nuevoArray

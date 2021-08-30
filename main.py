@@ -721,68 +721,98 @@ class decafAlejandroPrinter(decafAlejandroListener):
                           tipoVariableRelOps == ">" or tipoVariableRelOps == ">=")
                             and tipoVariableEqOps == "" and tipoVariablecondOps == ""):
                         print("variableRelOps")
-                else:
+                elif(ctx.assign_op().EQUAL_OP()):  # logica cuando asignamos del lado derecho
                     valorAsignado = ctx.expr().getText()
+                    expresionEntera = ctx.expr().getText()
+                    splitHijos = []
+                    splitHijos = self.functions.removeOperations(
+                        expresionEntera)
+                    scope = self.scopeActual
+                    if("+" in valorAsignado or "-" in valorAsignado or "/" in valorAsignado or "*" in valorAsignado or "%" in valorAsignado):
+                        # sabiendoq ue hay operaciones del lado derecho
+                        for x in splitHijos:
+                            # o variable, o numero u operador
+                            hijo = x
+                            # verificamos si es int
+                            if(not "+" in hijo and not "-" in hijo and not "/" in hijo and not "*" in hijo and not "%" in hijo):
+                                if(self.functions.checkIfIsInt(hijo) == False):
+                                    varExists = self.tablaSimbolos.varExistsRecursivo(
+                                        hijo, scope, False)
+                                    if(varExists):
+                                        informationHijo = self.tablaSimbolos.getVarInformationRecursivo(
+                                            hijo, scope, False, [])
+                                        if(informationHijo[1] != "int"):
+                                            print(
+                                                f'ERROR_DECLARACION. La variable o valor "{hijo}" NO es del tipo INT. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            exit()
+                                    else:
+                                        print(
+                                            f'ERROR_DECLARACION. La variable o valor "{hijo}" NO existe o es no puede ser usado en una operacion aritmética. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+
                     line = ctx.start.line
                     column = ctx.start.column
                     scope = self.scopeActual
                     arrayinformation = []
-                    # si nos topamos con un array
-                    if("[" in name and "]" in name):
-                        name = name[0]
-                        arrayExists = self.tablaSimbolos.checkStructInStructSymbolTableV2(
-                            name)
-                        if(arrayExists):
-                            arrayinformation = self.tablaSimbolos.getStructInformation(
-                                name)
-                            typeMatchValor = self.functions.checkGeneraltype(
-                                valorAsignado, 'int')
-                            if(typeMatchValor == False):
-                                print(
-                                    f'ERROR_ARRAY. La variable "{name}" se le esta pasando como valor en el corchete el valor de {valorAsignado} un valor NO INT . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
-                        else:
-                            print(
-                                f'ERROR_ARRAY. La variable {name} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                            exit()
-
+                    if("+" in valorAsignado or "-" in valorAsignado or "/" in valorAsignado or "*" in valorAsignado or "%" in valorAsignado):
+                        print("es una operacion aritmética")
                     else:
-                        varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                            name, scope)
-                        # verificamos si existe en el scope actual
-                        if(varExists):
-                            tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                                name, scope)
-                            typeMatch = self.functions.checkGeneraltype(
-                                valorAsignado, tipoGuardado)
-                            if(typeMatch == False):
-                                print(
-                                    f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                        # si nos topamos con un array
+                        if("[" in name and "]" in name):
+                            name = name[0]
+                            arrayExists = self.tablaSimbolos.checkStructInStructSymbolTableV2(
+                                name)
+                            if(arrayExists):
+                                arrayinformation = self.tablaSimbolos.getStructInformation(
+                                    name)
+                                typeMatchValor = self.functions.checkGeneraltype(
+                                    valorAsignado, 'int')
+                                if(typeMatchValor == False):
+                                    print(
+                                        f'ERROR_ARRAY. La variable "{name}" se le esta pasando como valor en el corchete el valor de {valorAsignado} un valor NO INT . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
                             else:
-                                print("")
-                                # print("PRINT LOCAL", name)
+                                print(
+                                    f'ERROR_ARRAY. La variable {name} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                exit()
+
                         else:
-                            # si no existe en el scope actual, revismos en el global
-                            varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                name, "global")
-                            if(varExists2):
-                                # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+                            varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                name, scope)
+                            # verificamos si existe en el scope actual
+                            if(varExists):
                                 tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                                    name,  "global")
+                                    name, scope)
                                 typeMatch = self.functions.checkGeneraltype(
                                     valorAsignado, tipoGuardado)
                                 if(typeMatch == False):
                                     print(
-                                        f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
                                     exit()
                                 else:
-                                    print("PRINT GLOBAL")
+                                    print("")
+                                    # print("PRINT LOCAL", name)
+                            else:
+                                # si no existe en el scope actual, revismos en el global
+                                varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                    name, "global")
+                                if(varExists2):
+                                    # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+                                    tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
+                                        name,  "global")
+                                    typeMatch = self.functions.checkGeneraltype(
+                                        valorAsignado, tipoGuardado)
+                                    if(typeMatch == False):
+                                        print(
+                                            f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+                                    else:
+                                        print("PRINT GLOBAL")
 
-                            elif(varExists2 == False):
-                                print(
-                                    f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                elif(varExists2 == False):
+                                    print(
+                                        f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
 
                 # print(self.tablaSimbolos.getDictVar())
 

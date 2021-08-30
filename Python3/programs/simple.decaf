@@ -1,27 +1,36 @@
 class Program
 {
 
-int A[10];
+void OutputInt(int n)
+{
+
+}
+
+int InputInt(void)
+{
+
+	return 0;
+}
+	void Test(int a, int b, int c, int d,int e,int f,int g,int h,int i,int j,int k,int l,int m,int n,int o,int p)
+{
+	int resultado;
+	resultado = (a/b)*c-d+e+f+g+h+i+j+k+l+m+n+o+p;
+	OutputInt(resultado);
+}
+
 
 void main(void)
 {
-
+	int n;
+	int f;
+	
 	int i;
 	i = 0;
-	while(i<10)
-	{
-		
-		i = i+1;		
-	}
-	Ordenar();
-	i = 0;
-	while(i<10)
-	{
-		
-		i = i+1;
-	}
+	
+	Test(4,2,6,7,1,1,1,150,1,1,1,1,1,1,1,1);
 
 }
+
 
 
 
