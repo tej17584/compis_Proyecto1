@@ -289,3 +289,57 @@ class symbolTables():
                 return valorTupla[3]
 
         return False
+
+    # ! ------------------------- METODOS DE DICCIONARIO DE ESTRUCTURAS ---------
+    def getDictStruct(self):
+        """
+        Retorna el diccionario de estructuras
+        """
+        return self.dictStructs
+
+    def checkStructInStructSymbolTableV2(self, structName):
+        """
+        Revisa si una estructura existe en la tabla de structs,
+        sino retonar FALSE. Sino True
+        *@param: structName: el nombre de la estructura
+        """
+        existsStruct = False
+        for numeroTupla, valorTupla in self.dictStructs.items():
+            if(str(structName) == str(valorTupla[0])):
+                existsStruct = True
+
+        if((existsStruct == True)):
+            return True
+        else:
+            return False
+
+    def getStructInformation(self, structName):
+        """
+        Retorna la tupla de una estructura
+        *@param: structName: el nombre de la estructura
+        """
+        existsStruct = []
+        for numeroTupla, valorTupla in self.dictStructs.items():
+            if(str(structName) == str(valorTupla[0])):
+                existsStruct = valorTupla
+
+        return existsStruct
+
+    def AddNewStruct_DictStruct(self, structName="", structType="", scopePadre=""):
+        """
+        Agrega una nueva tupla a la tabla de simbolos de la tabla de ESTRUCTURAS
+        *@param: structName: el nombre de la estructura
+        *@param: structType: el tipo de la estructura SI tiene
+        *@param: scopePadre: el scope padre
+        """
+        existsEntry = self.checkStructInStructSymbolTableV2(structName)
+        # colocamos en el orden especificado
+        arraynuevo = [structName, structType, scopePadre]
+        # si la entrada NO existe
+        if(existsEntry == False):
+            # agregamos una nueva entrada al diccionario
+            self.dictStructs[self.contadorGlobalDictStructs] = arraynuevo
+            self.contadorGlobalDictStructs += 1
+        else:
+            print(
+                "Error a nivel de tabla de simbolos. La entrada de la struct ya existe.")

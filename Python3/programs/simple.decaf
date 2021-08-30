@@ -1,47 +1,25 @@
 class Program
 {
 
-int a;
-int b;
-
-void OutputInt(int n)
-{
-}
-
-int InputInt(void)
-{return 0;}
-
-void Test(int a, int b, int c, int d)
-{
-	OutputInt(a);
-	OutputInt(b);
-	OutputInt(c);
-	OutputInt(d);
-
-}
-
-
-
+int A[10];
 
 void main(void)
 {
-	string s;
-	boolean aa;
-	a = 3;
-	b = 4;
-	
-	OutputInt(a);
-	Test(5,6,7,8);
 
-
-	if ('a' == s)
+	int i;
+	i = 0;
+	while(i<10)
 	{
-		int b;
-		b = 5;
-		OutputInt(b);
+		
+		i = i+1;		
 	}
-
-	OutputInt(b);
+	Ordenar();
+	i = 0;
+	while(i<10)
+	{
+		
+		i = i+1;
+	}
 
 }
 

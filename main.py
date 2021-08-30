@@ -49,9 +49,12 @@ class decafAlejandroPrinter(decafAlejandroListener):
     def exitProgram(self, ctx: decafAlejandroParser.ProgramContext):
         diccionarioVarsFinal = self.tablaSimbolos.getDictVar()
         print(diccionarioVarsFinal)
-        print("")
+        print("///////////////////////////////")
         diccionarioMethodsFinal = self.tablaSimbolos.getDictMethod()
         print(diccionarioMethodsFinal)
+        print("++++++++++++++++++++++++++++++++")
+        diccionarioStructsFinal = self.tablaSimbolos.getDictStruct()
+        print(diccionarioStructsFinal)
         # ! verificamos la logica de la definicion de main sin parametros
         mainMethodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
             "main")
@@ -69,6 +72,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
         # actualizamos el scope
         self.scopeAnterior = self.scopeActual
         self.scopeActual = ctx.ID().getText()
+        # tomamos los datos que nos interesan
+        name = ctx.ID().getText()
+        tipo = ctx.STRUCT().getText()
+        line = ctx.start.line
+        column = ctx.start.column
+        scope = self.scopeActual
+        # agregamos la nueva estructura
+        self.tablaSimbolos.AddNewStruct_DictStruct(
+            name, tipo, self.scopeAnterior)
 
     def exitStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
         # actualizamos el scope cuando salimso de la funcion
@@ -420,14 +432,18 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 exit()
 
             else:
-                if(ctx.IF()):
+                if(ctx.IF() or ctx.WHILE()):
                     print("hay if nuevo scope")
-                    print("scope antes del IF", self.scopeActual)
+                    print("scope antes del IF o WHILE", self.scopeActual)
                     self.conteoIfs += 1
-                    scopeNuevo = 'if'+str(self.conteoIfs)
+                    scopeNuevo = ""
+                    if(ctx.IF()):
+                        scopeNuevo = 'if'+str(self.conteoIfs)
+                    elif(ctx.WHILE()):
+                        scopeNuevo = 'while'+str(self.conteoIfs)
                     self.scopeAnterior = self.scopeActual
                     self.scopeActual = scopeNuevo
-                    print("scope antes LUEGO  IF", self.scopeActual)
+                    print("scope antes LUEGO  IF o WHILE", self.scopeActual)
                     tipoVariableEqOps = ""
                     tipoVariablecondOps = ""
                     tipoVariableRelOps = ""
@@ -710,44 +726,63 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     line = ctx.start.line
                     column = ctx.start.column
                     scope = self.scopeActual
+                    arrayinformation = []
+                    # si nos topamos con un array
                     if("[" in name and "]" in name):
                         name = name[0]
-                    varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                        name, scope)
-                    # verificamos si existe en el scope actual
-                    if(varExists):
-                        tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                            name, scope)
-                        typeMatch = self.functions.checkGeneraltype(
-                            valorAsignado, tipoGuardado)
-                        if(typeMatch == False):
-                            print(
-                                f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                            exit()
+                        arrayExists = self.tablaSimbolos.checkStructInStructSymbolTableV2(
+                            name)
+                        if(arrayExists):
+                            arrayinformation = self.tablaSimbolos.getStructInformation(
+                                name)
+                            typeMatchValor = self.functions.checkGeneraltype(
+                                valorAsignado, 'int')
+                            if(typeMatchValor == False):
+                                print(
+                                    f'ERROR_ARRAY. La variable "{name}" se le esta pasando como valor en el corchete el valor de {valorAsignado} un valor NO INT . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                exit()
                         else:
-                            print("")
-                            # print("PRINT LOCAL", name)
+                            print(
+                                f'ERROR_ARRAY. La variable {name} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                            exit()
+
                     else:
-                        # si no existe en el scope actual, revismos en el global
-                        varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                            name, "global")
-                        if(varExists2):
-                            # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+                        varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                            name, scope)
+                        # verificamos si existe en el scope actual
+                        if(varExists):
                             tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                                name,  "global")
+                                name, scope)
                             typeMatch = self.functions.checkGeneraltype(
                                 valorAsignado, tipoGuardado)
                             if(typeMatch == False):
                                 print(
-                                    f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
                                 exit()
                             else:
-                                print("PRINT GLOBAL")
+                                print("")
+                                # print("PRINT LOCAL", name)
+                        else:
+                            # si no existe en el scope actual, revismos en el global
+                            varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                name, "global")
+                            if(varExists2):
+                                # si existe en el global, verificamos que el tipo con el que fue guardado haga match
+                                tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
+                                    name,  "global")
+                                typeMatch = self.functions.checkGeneraltype(
+                                    valorAsignado, tipoGuardado)
+                                if(typeMatch == False):
+                                    print(
+                                        f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                else:
+                                    print("PRINT GLOBAL")
 
-                        elif(varExists2 == False):
-                            print(
-                                f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                            exit()
+                            elif(varExists2 == False):
+                                print(
+                                    f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                exit()
 
                 # print(self.tablaSimbolos.getDictVar())
 
@@ -792,11 +827,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             exit()
                     else:
                         print(
-                            f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
+                            f'La variable o valor "{oldArrayValue}" no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
                         exit()
 
-            varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                name, scope)
+                # we add the array to the struct table
+                self.tablaSimbolos.AddNewStruct_DictStruct(
+                    name, tipo, self.scopeAnterior)
+
+            varExists = self.tablaSimbolos.varExistsRecursivo(
+                name, self.scopeActual, False)
             if(varExists == False):
                 if("struct" in tipo):
                     tipo = tipo.replace("struct", "")
@@ -808,7 +847,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
             # ya tenemos las variables actuales
             # print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
 
-    """ def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
+    def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
         name = ctx.ID().getText()  # el nombre del array
         column = ctx.start.column
         line = ctx.start.line
@@ -823,22 +862,17 @@ class decafAlejandroPrinter(decafAlejandroListener):
             if(hasError):
                 print(errorValue)
                 exit()
+        elif(self.functions.checkIfIsInt(arrayValue) == False):
+            print(
+                f' El valor DENTRO de un corchete de array debe ser INT. La variable o valor "{arrayValue}" no lo es. Linea: {line} columna: {column} ')
+            exit()
         else:
-            oldArrayValue = arrayValue
-            varExists, arrayValue = self.tablaSimbolos.checkVarInVarSymbolTable(
+            varExists = self.tablaSimbolos.checkStructInStructSymbolTableV2(
                 arrayValue)
-            if(varExists):
-                tipoDato = self.tablaSimbolos.getTypeVarDictVar(oldArrayValue)
-                claseError = Errores(name, column, line, tipoDato)
-                hasError, errorValue = claseError.checkArrayError(
-                    arrayValue, True)
-                if(hasError):
-                    print(errorValue)
-                    exit()
-            else:
+            if(varExists == False):
                 print(
-                    f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
-                exit() """
+                    f'ERROR_ARRAY. La variable {arrayValue} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                exit()
 
 
 def main():
