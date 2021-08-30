@@ -1,14 +1,14 @@
 class Program
 {
-    string concat(int x, int y)
+    string concat(string x, boolean y)
     {
-		return '1';
+		return '10';
     }
 
     void main(void)
     {
         string y;
         string s;
-        y = concat(2, 2)
+        y = concat('ss', true)
     }
 }
