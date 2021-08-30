@@ -1,26 +1,14 @@
 class Program
 {
+    string concat(int x, int y)
+    {
+		return '1';
+    }
 
-
-
-
-
-void main(void)
-{
-
-	int a;
-	a = 2;
-	if (a==3)
-	{
-		int b;
-		b = 5;
-		
-	}
-
-	
-
-}
-
-
-
+    void main(void)
+    {
+        string y;
+        string s;
+        y = concat(2, 2)
+    }
 }

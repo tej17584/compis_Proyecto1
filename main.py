@@ -240,8 +240,27 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     parametrosEnviados = ctx.expr().method_call(
                     ).method_call_inter().expr()
                     for x in range(0, len(parametrosEnviados)):
-                        nombreParametro = parametrosEnviados[x].location(
-                        ).var_id().getText()
+                        try:
+                            nombreParametro = parametrosEnviados[x].location(
+                            ).var_id().getText()
+                            if(nombreParametro == "true" or nombreParametro == "false"):
+                                tipoParametroEnviado = "boolean"
+                            else:
+                                tipoParametroEnviado = "variable"
+                        except:
+                            pass
+                        try:
+                            nombreParametro = parametrosEnviados[x].literal(
+                            ).getText()
+                            tipoParametroEnviado = "string"
+                        except:
+                            pass
+                        try:
+                            nombreParametro = parametrosEnviados[x].literal(
+                            ).int_literal().getText()
+                            tipoParametroEnviado = "int"
+                        except:
+                            pass
                         tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
                             nombreParametro, self.scopeActual)
                         tipoParametrosEnviar.append(tipoParametro)
