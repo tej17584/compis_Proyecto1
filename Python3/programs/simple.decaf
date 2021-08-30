@@ -1,14 +1,25 @@
 class Program
 {
-    string concat(string x, boolean y)
-    {
-		return '10';
-    }
 
-    void main(void)
-    {
-        string y;
-        string s;
-        y = concat('ss', true)
-    }
+int a;
+int b;
+void main(void)
+{
+
+	a = 3;
+	b = 4;
+
+
+	if (a>3)
+	{
+		int b;
+		b = 5;
+		
+	}
+
+	
+}
+
+
+
 }

@@ -419,12 +419,36 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 exit()
 
             else:
-                tipoVariableAsignadora = ""
+                tipoVariableEqOps = ""
+                tipoVariablecondOps = ""
+                tipoVariableRelOps = ""
                 try:
-                    tipoVariableAsignadora = ctx.expr().bin_op().eq_op().getText()
+                    tipoVariableEqOps = ctx.expr().bin_op().eq_op().getText()
                 except:
                     pass
-                if(tipoVariableAsignadora != "==" and tipoVariableAsignadora == ""):
+                try:
+                    tipoVariablecondOps = ctx.expr().bin_op().cond_op().getText()
+                except:
+                    pass
+                try:
+                    tipoVariableRelOps = ctx.expr().bin_op().rel_op().getText()
+                except:
+                    pass
+                # variables de EQ_OPS
+                if(
+                   (tipoVariableEqOps == "==" or tipoVariableEqOps == "!=")
+                        and tipoVariablecondOps == "" and tipoVariableRelOps == ""):
+                    print("Variable eqops")
+                # variables de  cond_OPS
+                if((tipoVariablecondOps == "&&" or tipoVariablecondOps == "||")
+                        and tipoVariableEqOps == "" and tipoVariableRelOps == ""):
+                    print("variable condOps")
+                # variables de REL_OPS
+                elif((tipoVariableRelOps == "<" or tipoVariableRelOps == "<=" or
+                      tipoVariableRelOps == ">" or tipoVariableRelOps == ">=")
+                        and tipoVariableEqOps == "" and tipoVariablecondOps == ""):
+                    print("variableRelOps")
+                else:
                     valorAsignado = ctx.expr().getText()
                     line = ctx.start.line
                     column = ctx.start.column
@@ -467,10 +491,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             print(
                                 f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
                             exit()
-                elif(tipoVariableAsignadora == "=="):
-                    print("YASSS")
 
-                print(self.tablaSimbolos.getDictVar())
+                # print(self.tablaSimbolos.getDictVar())
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
         for x in range(len(ctx.field_var())):
