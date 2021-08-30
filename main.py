@@ -557,40 +557,6 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     f'La variable {oldArrayValue} no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
                 exit() """
 
-    """  def enterMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
-
-        # print("-----------ENTER ---------------")
-        tipo = ctx.methodType().getText()
-        nombre = ctx.ID().getText()
-        parametro = ctx.parameter()
-        conteo = ctx.getChildCount()
-        # print(tipo, " ", nombre, " ", parametro, " ", conteo, " ")
-        # print("-----------ENTER---------------")
-        for x in range(0, conteo):
-            print(ctx.getChild(x).getText())
-        print("---------------")
-
-    def enterStructDeclaration(self, ctx: decafAlejandroParser.StructDeclarationContext):
-        variable2 = ctx.depth()
-        conteoHijos = ctx.getChildCount()
-
-    def enterVarDeclaration(self, ctx: decafAlejandroParser.VarDeclarationContext):
-        name = ctx.ID().getText()
-        column = ctx.start.column
-        line = ctx.start.line
-        type = ctx.varType().getText()
-        error = "ERRORAZO"
-        print(name, " ", column, " ", line, " ", type, " ", error, "")
-
-    def exitMethodDeclaration(self, ctx: decafAlejandroParser.MethodDeclarationContext):
-        # print("-----------EXIT ---------------")
-        tipo = ctx.methodType().getText()
-        nombre = ctx.ID().getText()
-        parametro = ctx.parameter()
-        conteo = ctx.getChildCount()
-        # print(tipo, " ", nombre, " ", parametro, " ", conteo, " ")
-        # print("----------- FIN EXIT ---------------") """
-
 
 def main():
     # hacemos el open de la data del archivo de prueba
