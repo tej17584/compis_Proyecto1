@@ -41,6 +41,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
         self.tablaSimbolos = symbolTables()
         self.scopeActual = "global"
         self.scopeAnterior = "global"
+        self.conteoIfs = 0
 
     def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
         return super().enterStatement(ctx)
@@ -132,7 +133,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     exit()
                 # una vez guardados parametros y variables, ahora guardamos la nueva entrada del diccionario
             self.tablaSimbolos.AddNewMethod_DictMethod(
-                tipo, name, parametrosToAdd, methodReturnsThings)
+                tipo, name, parametrosToAdd, methodReturnsThings, self.scopeAnterior)
         else:
             print(
                 f'Error, el método {name} ya fue declarado anteriormente. Linea: {line} columna: {column} ')
@@ -419,35 +420,183 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 exit()
 
             else:
-                tipoVariableEqOps = ""
-                tipoVariablecondOps = ""
-                tipoVariableRelOps = ""
-                try:
-                    tipoVariableEqOps = ctx.expr().bin_op().eq_op().getText()
-                except:
-                    pass
-                try:
-                    tipoVariablecondOps = ctx.expr().bin_op().cond_op().getText()
-                except:
-                    pass
-                try:
-                    tipoVariableRelOps = ctx.expr().bin_op().rel_op().getText()
-                except:
-                    pass
-                # variables de EQ_OPS
-                if(
-                   (tipoVariableEqOps == "==" or tipoVariableEqOps == "!=")
-                        and tipoVariablecondOps == "" and tipoVariableRelOps == ""):
-                    print("Variable eqops")
-                # variables de  cond_OPS
-                if((tipoVariablecondOps == "&&" or tipoVariablecondOps == "||")
-                        and tipoVariableEqOps == "" and tipoVariableRelOps == ""):
-                    print("variable condOps")
-                # variables de REL_OPS
-                elif((tipoVariableRelOps == "<" or tipoVariableRelOps == "<=" or
-                      tipoVariableRelOps == ">" or tipoVariableRelOps == ">=")
-                        and tipoVariableEqOps == "" and tipoVariablecondOps == ""):
-                    print("variableRelOps")
+                if(ctx.IF()):
+                    print("hay if nuevo scope")
+                    print("scope antes del IF", self.scopeActual)
+                    self.conteoIfs += 1
+                    scopeNuevo = 'if'+str(self.conteoIfs)
+                    self.scopeAnterior = self.scopeActual
+                    self.scopeActual = scopeNuevo
+                    print("scope antes LUEGO  IF", self.scopeActual)
+                    tipoVariableEqOps = ""
+                    tipoVariablecondOps = ""
+                    tipoVariableRelOps = ""
+                    try:
+                        tipoVariableEqOps = ctx.expr().bin_op().eq_op().getText()
+                    except:
+                        pass
+                    try:
+                        tipoVariablecondOps = ctx.expr().bin_op().cond_op().getText()
+                    except:
+                        pass
+                    try:
+                        tipoVariableRelOps = ctx.expr().bin_op().rel_op().getText()
+                    except:
+                        pass
+                    if(tipoVariableEqOps == "" and tipoVariablecondOps == "" and tipoVariableRelOps == ""):
+                        print(
+                            f'ERROR. En una condicion, deben darse valores booleanos "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        exit()
+                    # agregamos el nuevo if como metodo
+                    self.tablaSimbolos.AddNewMethod_DictMethod(
+                        "", scopeNuevo, [], False, self.scopeAnterior)
+                    # variables de EQ_OPS
+                    arraySplitEqOps = []
+                    if((tipoVariableEqOps == "==" or tipoVariableEqOps == "!=")
+                            and tipoVariablecondOps == "" and tipoVariableRelOps == ""):
+                        # hacemos split de cada valor y vamos a buscarlo
+                        arraySplitEqOps = ctx.expr().getText().split(tipoVariableEqOps)
+                        valor1 = arraySplitEqOps[0]
+                        valor2 = arraySplitEqOps[1]
+                        varExists3 = ""
+                        varExists4 = ""
+                        varInformation = []
+                        for x in arraySplitEqOps:
+                            if((valor2 == "true" or valor2 == "false") and (valor1 != "true" and valor1 != "false")):
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor1, self.scopeActual, False)
+                                if(varExists3 == False):
+                                    print(
+                                        f'ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                else:
+                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor1, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno = varInformation[1]
+                                    if(varTypeInterno != "boolean"):
+                                        print(
+                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+                            elif((valor1 == "true" or valor1 == "false") and (valor2 != "true" and valor2 != "false")):
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor2, self.scopeActual, False)
+                                if(varExists3 == False):
+                                    print(
+                                        f'ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                else:
+                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor2, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno = varInformation[1]
+                                    if(varTypeInterno != "boolean"):
+                                        print(
+                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+                            elif(self.functions.checkIfIsInt(valor1) and self.functions.checkIfIsInt(valor2) == False):
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor2, self.scopeActual, False)
+                                if(varExists3 == False):
+                                    print(
+                                        f'ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                else:
+                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor2, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno = varInformation[1]
+                                    if(varTypeInterno != "int"):
+                                        print(
+                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+                            elif(self.functions.checkIfIsInt(valor2) and (self.functions.checkIfIsInt(valor1) == False)):
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor1, self.scopeActual, False)
+                                if(varExists3 == False):
+                                    print(
+                                        f'ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                else:
+                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor1, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno = varInformation[1]
+                                    if(varTypeInterno != "int"):
+                                        print(
+                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+                            elif(self.functions.checkGeneraltype(valor1, "string") and self.functions.checkGeneraltype(valor2, "string") == False):
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor2, self.scopeActual, False)
+                                if(varExists3 == False):
+                                    print(
+                                        f'ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                else:
+                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor2, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno = varInformation[1]
+                                    if(varTypeInterno != "string"):
+                                        print(
+                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+                            elif(self.functions.checkGeneraltype(valor2, "string") and self.functions.checkGeneraltype(valor1, "string") == False):
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor1, self.scopeActual, False)
+                                if(varExists3 == False):
+                                    print(
+                                        f'ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                else:
+                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor1, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno = varInformation[1]
+                                    if(varTypeInterno != "string"):
+                                        print(
+                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+                            else:
+                                # verificamos ambas variables
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor1, self.scopeActual, False)
+                                varExists4 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor2, self.scopeActual, False)
+                                if(varExists3 == True and varExists4 == False):
+                                    print(
+                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                elif(varExists3 == False and varExists4 == True):
+                                    print(
+                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                elif(varExists3 == False and varExists4 == False):
+                                    print(
+                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    exit()
+                                elif(varExists3 == True and varExists4 == True):
+                                    varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor1, self.scopeActual, False, [])
+                                    varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor2, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno1 = varInformation1[1]
+                                    varTypeInterno2 = varInformation2[1]
+                                    if(varTypeInterno1 != varTypeInterno2):
+                                        print(
+                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        exit()
+                                # variables de  cond_OPS
+                    if((tipoVariablecondOps == "&&" or tipoVariablecondOps == "||")
+                            and tipoVariableEqOps == "" and tipoVariableRelOps == ""):
+                        print("variable condOps")
+                    # variables de REL_OPS
+                    elif((tipoVariableRelOps == "<" or tipoVariableRelOps == "<=" or
+                          tipoVariableRelOps == ">" or tipoVariableRelOps == ">=")
+                            and tipoVariableEqOps == "" and tipoVariablecondOps == ""):
+                        print("variableRelOps")
                 else:
                     valorAsignado = ctx.expr().getText()
                     line = ctx.start.line
@@ -493,6 +642,10 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             exit()
 
                 # print(self.tablaSimbolos.getDictVar())
+
+    def exitStatement(self, ctx: decafAlejandroParser.StatementContext):
+        if('if' in ctx.getText() or 'for' in ctx.getText() or 'while' in ctx.getText() or 'else' in ctx.getText()):
+            self.scopeActual = self.scopeAnterior
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
         for x in range(len(ctx.field_var())):

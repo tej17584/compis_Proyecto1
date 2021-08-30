@@ -142,7 +142,51 @@ class symbolTables():
         else:
             return False
 
-    # ! ------------------------- METODOS DE DICCIONARIO DE METODOS ---------
+    def varExistsRecursivo(self, nombre, scope, existe=False):
+        """
+        Revisa si una variable dada EXISTE en la tabla de simbolos de variables
+        Si existe, retorna TRUE. Si no, retorna False, RECURSIVO
+        *@param: nombre: la variable a verificar en la tabla de simbolos
+        *@param: scope: el scope de la variable, ya que podemos tener dos distintas
+        *@param: existe: si existe
+        """
+        if(existe):
+            return True
+        if(len(self.dictVars) > 0):
+            for i in range(len(self.dictVars)):
+                valor = self.dictVars[i]
+                if(nombre == valor[0] and scope == valor[2]):
+                    existe = True
+            if self.checkMethodInMethodSymbolTableV2(scope) and existe == False:
+                nuevoScope = self.getPadreMethodDictMethods(scope)
+                if(nuevoScope != ''):
+                    return self.varExistsRecursivo(nombre, nuevoScope)
+        return existe
+
+    def getVarInformationRecursivo(self, nombre, scope, existe=False, var=""):
+        """
+        Revisa si una variable dada EXISTE en la tabla de simbolos de variables
+        Si existe, retorna TRUE. Si no, retorna False, RECURSIVO
+        *@param: nombre: la variable a verificar en la tabla de simbolos
+        *@param: scope: el scope de la variable, ya que podemos tener dos distintas
+        *@param: existe: si existe
+        *@param: var: los valores de retorno
+        """
+        if(existe):
+            return var
+        if(len(self.dictVars) > 0):
+            for i in range(len(self.dictVars)):
+                valor = self.dictVars[i]
+                if(nombre == valor[0] and scope == valor[2]):
+                    existe = True
+                    var = valor
+            if self.checkMethodInMethodSymbolTableV2(scope) and existe == False:
+                nuevoScope = self.getPadreMethodDictMethods(scope)
+                if(nuevoScope != ''):
+                    return self.getVarInformationRecursivo(nombre, nuevoScope)
+        return var
+        # ! ------------------------- METODOS DE DICCIONARIO DE METODOS ---------
+
     def getDictMethod(self):
         """
         Retorna el diccionario de métodos
@@ -164,17 +208,18 @@ class symbolTables():
         else:
             return False
 
-    def AddNewMethod_DictMethod(self, methodType="", methodName="", parametros=[], returnValue=False):
+    def AddNewMethod_DictMethod(self, methodType="", methodName="", parametros=[], returnValue=False, padre=""):
         """
         Agrega una nueva tupla a la tabla de simbolos de la tabla de METODOS
         *@param: methodType: el tipo de método, como void
         *@param: methodName: el nombre del método -> como main
         *@param: parametros: un array con sus parámetros
         *@param: returnValue: el valor que planea retornar o el tipo, sino vacío
+        *@param: padre: el padre del método
         """
         existsEntry = self.checkMethodInMethodSymbolTableV2(methodName)
         # colocamos en el orden especificado
-        arraynuevo = [methodType, methodName, parametros, returnValue]
+        arraynuevo = [methodType, methodName, parametros, returnValue, padre]
         # si la entrada NO existe
         if(existsEntry == False):
             # agregamos una nueva entrada al diccionario
@@ -191,6 +236,17 @@ class symbolTables():
         for numeroTupla, valorTupla in self.dictMethods.items():
             if(str(methodName) == str(valorTupla[1])):
                 return valorTupla[0]
+
+        return ""
+
+    def getPadreMethodDictMethods(self, methodName):
+        """
+        Retorna el padre del método
+        *@param: methodName: el nombre del método
+        """
+        for numeroTupla, valorTupla in self.dictMethods.items():
+            if(str(methodName) == str(valorTupla[1])):
+                return valorTupla[4]
 
         return ""
 
