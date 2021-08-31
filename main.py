@@ -898,7 +898,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         if(hasAnotherSon):
                             print("LOGICA para 2 hijos ")
                         elif(hasAnotherSon == False):  # lógica para un valor del lado derecho UNICO
-                            if("." not in nameVariableV2):  # si no es una structura
+                            if("." not in nameVariableV2):  # si no es una structura del lado izquierdo
                                 # verificamos si la variable o valor existe pero una variable no estructura
                                 variableAsignadaExiste = self.tablaSimbolos.varExistsRecursivo(
                                     nameVariableV2, scope, False)
