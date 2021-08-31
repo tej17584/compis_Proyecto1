@@ -133,7 +133,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         variable, tipoVariable, scope, 0, 0)
                 elif(varExists == True):
                     print(
-                        f'--> Error, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
+                        f'--> Error_varDeclaration, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
                     # exit()
                 # print("parametros", parametros[x].getText())
             if(returnExpresion == "return" and returnValue != ""):
@@ -192,30 +192,55 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 if(self.functions.checkIfIsInt(value) == False and value != "false" and value != "true" and self.functions.checkGeneraltype(value, "string") == False):
                     if("." in value):
                         indice = value.index(".")
-                        value = value[0:indice]
-                    for i in range(len(value)):
-                        varExistsReturn = self.tablaSimbolos.varExistsRecursivo(
-                            value[i], self.scopeActual, False)
-                        if(varExistsReturn == False):
+                        variableEstructura = value[0:indice]
+                        variableDentroEstructura = value[indice+1:len(value)]
+                        # mandamos ambos parametros
+                        structExists = self.tablaSimbolos.varExistsRecursivo(
+                            variableEstructura, self.scopeActual, False)
+                        if(structExists):
+                            informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                variableEstructura, self.scopeActual, False, [])
+                            innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                variableDentroEstructura, informacionStruct[1])
+                            if(innerVarExists):
+                                informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                    variableDentroEstructura, informacionStruct[1], False, [])
+                                if(informacionInnerVarStruct[1] != methodTypeFromTable):
+                                    print(
+                                        f'--> ERROR. Variable "{variableDentroEstructura}" no es del tipo requerido de retorno de {self.scopeActual} "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    pass
+                            else:
+                                print(
+                                    f'--> ERROR. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        else:
                             print(
-                                f'--> ERROR. La variable retornada NO existe  "{self.scopeActual}", linea: {ctx.start.line}')
-                            # exit()
-                        varinformation = self.tablaSimbolos.getVarInformationRecursivo(
-                            value[i], self.scopeActual, False, [])
-                        if isinstance(varinformation[1], str) and len(varinformation[1]) > 0:
-                            arrayVars.append(varinformation[1])
-                        if not len(set(arrayVars)) <= 1:
+                                f'--> ERROR. Variable {variableEstructura} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    # exit()
+                    else:
+                        for i in range(len(value)):
+                            varExistsReturn = self.tablaSimbolos.varExistsRecursivo(
+                                value[i], self.scopeActual, False)
+                            if(varExistsReturn == False):
+                                print(
+                                    f'--> ERROR. La variable retornada NO existe  "{self.scopeActual}", linea: {ctx.start.line}')
+                                # exit()
+                            varinformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                value[i], self.scopeActual, False, [])
+                            if isinstance(varinformation[1], str) and len(varinformation[1]) > 0:
+                                arrayVars.append(varinformation[1])
+                            if not len(set(arrayVars)) <= 1:
+                                print(
+                                    f'--> ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
+                                # exit()
+                        e = ""
+                        if(len(arrayVars) > 0):
+                            e = next(iter(arrayVars))
+                        # obtenemos el tipo de método
+                        if(methodTypeFromTable != e):
                             print(
-                                f'--> ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
+                                f'--> ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                             # exit()
-                    e = ""
-                    if(len(arrayVars) > 0):
-                        e = next(iter(arrayVars))
-                    # obtenemos el tipo de método
-                    if(methodTypeFromTable != e):
-                        print(
-                            f'--> ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        # exit()
 
         else:
             methodCallAsignacion = ""
@@ -450,7 +475,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         scopeNuevo = 'while'+str(self.conteoIfs)
                     self.scopeAnterior = self.scopeActual
                     self.scopeActual = scopeNuevo
-                    #print("scope antes LUEGO  IF o WHILE", self.scopeActual)
+                    # print("scope antes LUEGO  IF o WHILE", self.scopeActual)
                     tipoVariableEqOps = ""
                     tipoVariablecondOps = ""
                     tipoVariableRelOps = ""
@@ -851,8 +876,9 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                         print(
                                             f'--> ERROR_DECLARACION. La variable o valor "{hijo}" NO existe o es no puede ser usado en una operacion aritmética. linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                    nameVariableV2 = ""
                     try:
-                        nameVaria = ctx.location().getText()  # el nombre de la variable
+                        nameVariableV2 = ctx.location().getText()  # el nombre de la variable
                     except:
                         pass
                     line = ctx.start.line
@@ -866,72 +892,108 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             hasAnotherSon = True
                     except:
                         pass
-
-                    if(hasAnotherSon):
-                        print("LOGICA para 2 hijos ")
-                    else:
-                        print("logica para normal")
                     if("+" in valorAsignado or "-" in valorAsignado or "/" in valorAsignado or "*" in valorAsignado or "%" in valorAsignado):
                         pass
                     else:
-                        # si nos topamos con un array
-                        if("[" in name and "]" in name):
-                            name = name[0]
-                            arrayExists = self.tablaSimbolos.checkStructInStructSymbolTableV2(
-                                name)
-                            if(arrayExists):
-                                arrayinformation = self.tablaSimbolos.getStructInformation(
-                                    name)
-                                typeMatchValor = self.functions.checkGeneraltype(
-                                    valorAsignado, 'int')
-                                if(typeMatchValor == False):
-                                    print(
-                                        f'--> ERROR_ARRAY. La variable "{name}" se le esta pasando como valor en el corchete el valor de {valorAsignado} un valor NO INT . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                            else:
-                                print(
-                                    f'--> ERROR_ARRAY. La variable {name} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-
-                        else:
-                            varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                name, scope)
-                            # verificamos si existe en el scope actual
-                            if(varExists):
-                                tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                                    name, scope)
-                                typeMatch = self.functions.checkGeneraltype(
-                                    valorAsignado, tipoGuardado)
-                                if(typeMatch == False):
-                                    print(
-                                        f'--> ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    print("")
-                                    # print("PRINT LOCAL", name)
-                            else:
-                                # si no existe en el scope actual, revismos en el global
-                                varExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                    name, "global")
-                                if(varExists2):
-                                    # si existe en el global, verificamos que el tipo con el que fue guardado haga match
-                                    tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                                        name,  "global")
-                                    typeMatch = self.functions.checkGeneraltype(
-                                        valorAsignado, tipoGuardado)
-                                    if(typeMatch == False):
-                                        print(
-                                            f'--> ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
+                        if(hasAnotherSon):
+                            print("LOGICA para 2 hijos ")
+                        elif(hasAnotherSon == False):  # lógica para un valor del lado derecho UNICO
+                            if("." not in nameVariableV2):  # si no es una structura
+                                # verificamos si la variable o valor existe pero una variable no estructura
+                                variableAsignadaExiste = self.tablaSimbolos.varExistsRecursivo(
+                                    nameVariableV2, scope, False)
+                                if(variableAsignadaExiste == True):
+                                    tipoVariableAsignada = self.tablaSimbolos.getVarInformationRecursivo(
+                                        nameVariableV2, scope, False, [])[1]
+                                    if(self.functions.checkIfIsInt(valorAsignado)):
+                                        # si del lado derecho es int, miramos al lado izquierdo
+                                        if(tipoVariableAsignada != "int"):
+                                            print(
+                                                f'--> ERROR. El valor asignado del lado derecho es INT y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    elif(self.functions.checkGeneraltype(valorAsignado, "string")):
+                                        # si del lado derecho es string, miramos al lado izquierdo
+                                        if(tipoVariableAsignada != "string"):
+                                            print(
+                                                f'--> ERROR. El valor asignado del lado derecho es STRING y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    elif(valorAsignado == "true" or valorAsignado == "false"):
+                                        # si del lado derecho es boolean, miramos al lado izquierdo
+                                        if(tipoVariableAsignada != "boolean"):
+                                            print(
+                                                f'--> ERROR. El valor asignado del lado derecho es BOOLEAN y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
                                     else:
-                                        print("PRINT GLOBAL")
-
-                                elif(varExists2 == False):
+                                        # verificamos la variable o valor
+                                        varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
+                                            valorAsignado, self.scopeActual, False)
+                                        if(varExistsValor1 == False):
+                                            print(
+                                                f'--> ERROR. La  variable "{valorAsignado}" no ha sido "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        else:
+                                            varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                                valorAsignado, self.scopeActual, False, [])
+                                            # el tipo de variable
+                                            varTypeInterno1 = varInformation1[1]
+                                            # si del lado derecho la var no tiene el mismo tipo
+                                            if(varTypeInterno1 != tipoVariableAsignada):
+                                                print(
+                                                    f'--> ERROR. El valor asignado del lado derecho es no tiene el mismo tipo que el izquierdo y no corresponde con el del izquierdo. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
                                     print(
-                                        f'--> ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-
-                # print(self.tablaSimbolos.getDictVar())
+                                        f'--> ERROR_TESTEO. La variable o valor "{nameVariableV2}" NO existe. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                            else:  # es una estructura a la izquierda
+                                indice = nameVariableV2.index(".")
+                                variableEstructura = nameVariableV2[0:indice]
+                                variableDentroEstructura = nameVariableV2[indice+1:len(
+                                    nameVariableV2)]
+                                # mandamos ambos parametros
+                                structExists = self.tablaSimbolos.varExistsRecursivo(
+                                    variableEstructura, self.scopeActual, False)
+                                if(structExists):  # si la estructura existe
+                                    # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura, self.scopeActual, False, [])
+                                    innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                        variableDentroEstructura, informacionStruct[1])
+                                    if(innerVarExists):
+                                        informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                            variableDentroEstructura, informacionStruct[1], False, [])
+                                        tipoDatoInnerVariable = informacionInnerVarStruct[1]
+                                        if(self.functions.checkIfIsInt(valorAsignado)):
+                                            # si del lado derecho es int, miramos al lado izquierdo
+                                            if(tipoDatoInnerVariable != "int"):
+                                                print(
+                                                    f'--> ERROR. El valor asignado del lado derecho es INT y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        elif(self.functions.checkGeneraltype(valorAsignado, "string")):
+                                            # si del lado derecho es string, miramos al lado izquierdo
+                                            if(tipoDatoInnerVariable != "string"):
+                                                print(
+                                                    f'--> ERROR. El valor asignado del lado derecho es STRING y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        elif(valorAsignado == "true" or valorAsignado == "false"):
+                                            # si del lado derecho es boolean, miramos al lado izquierdo
+                                            if(tipoDatoInnerVariable != "boolean"):
+                                                print(
+                                                    f'--> ERROR. El valor asignado del lado derecho es BOOLEAN y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        else:
+                                            # verificamos la variable o valor
+                                            varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
+                                                valorAsignado, self.scopeActual, False)
+                                            if(varExistsValor1 == False):
+                                                print(
+                                                    f'--> ERROR. La  variable "{valorAsignado}" no ha sido "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            else:
+                                                varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                                    valorAsignado, self.scopeActual, False, [])
+                                                # el tipo de variable
+                                                varTypeInterno1 = varInformation1[1]
+                                                # si del lado derecho la var no tiene el mismo tipo
+                                                if(varTypeInterno1 != tipoDatoInnerVariable):
+                                                    print(
+                                                        f'--> ERROR. El valor asignado del lado derecho es no tiene el mismo tipo que el izquierdo y no corresponde con el del izquierdo. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    else:
+                                        print(
+                                            f'--> ERROR. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    print(
+                                        f'--> ERROR. Variable {variableEstructura} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
 
     def exitStatement(self, ctx: decafAlejandroParser.StatementContext):
         if('if' in ctx.getText() or 'for' in ctx.getText() or 'while' in ctx.getText() or 'else' in ctx.getText()):
@@ -947,7 +1009,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
             arrayValue = ""
             # condicion por si es un array
             if("[" in name and "]" in name):
-                name = name[0]
+                indexCorchete = name.index("[")
+                name = name[0: indexCorchete]
                 arrayValue = ctx.field_var()[x].array_id().expr().getText()
 
                 if(self.functions.checkIfIsInt(arrayValue)):
@@ -981,15 +1044,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 self.tablaSimbolos.AddNewStruct_DictStruct(
                     name, tipo, self.scopeAnterior)
 
-            varExists = self.tablaSimbolos.varExistsRecursivo(
-                name, self.scopeActual, False)
+            varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                name, self.scopeActual)
             if(varExists == False):
                 if("struct" in tipo):
                     tipo = tipo.replace("struct", "")
                 self.tablaSimbolos.AddNewVar_DictVar(name, tipo, scope, 0, 0)
             elif(varExists == True):
                 print(
-                    f'--> Error, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
+                    f'--> Error_VarDeclaration2, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
                 # exit()
             # ya tenemos las variables actuales
             # print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
