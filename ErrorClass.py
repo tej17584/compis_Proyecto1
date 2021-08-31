@@ -20,6 +20,7 @@ class Errores():
         self.columna = columna
         self.linea = linea
         self.tipo = tipo
+        self.arrayErrores = []
 
     def checkArrayError(self, numero, isLetter):
         """
@@ -34,3 +35,16 @@ class Errores():
         elif(numero <= 0 and (isLetter == True)):
             return True, f'Error de declaración del array con nombre:{self.nombre}. En linea: {self.linea}, columna:{self.columna}. La variable usada DENTRO del array tiene un valor de: -> {numero} <- y se espera uno mayor a 0'
         return False, ""
+
+    def addNewError(self, error):
+        """
+        Método para agregar un nuevo error al stack
+        *@param error: el nuevo error
+        """
+        self.arrayErrores.append("--> ", error)
+
+    def getAllErrors(self):
+        """
+        REtorna todos los errores
+        """
+        return self.arrayErrores

@@ -65,8 +65,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
             pass
         else:
             print(
-                f'ERROR. No está declarado el método main sin parámetros  linea: {ctx.start.line}, columna: {ctx.start.column}')
-            exit()
+                f'--> ERROR. No está declarado el método main sin parámetros  linea: {ctx.start.line}, columna: {ctx.start.column}')
+            # exit()
 
     def enterStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
         # actualizamos el scope
@@ -133,23 +133,23 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         variable, tipoVariable, scope, 0, 0)
                 elif(varExists == True):
                     print(
-                        f'Error, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
-                    exit()
+                        f'--> Error, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
+                    # exit()
                 # print("parametros", parametros[x].getText())
             if(returnExpresion == "return" and returnValue != ""):
                 methodReturnsThings = True
             if(tipo != "void"):
                 if(returnExpresion == "" or returnValue == ""):
                     print(
-                        f'ERROR. El método {name} no esta retornando nada. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
-                    exit()
+                        f'--> ERROR. El método {name} no esta retornando nada. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
+                    # exit()
                 # una vez guardados parametros y variables, ahora guardamos la nueva entrada del diccionario
             self.tablaSimbolos.AddNewMethod_DictMethod(
                 tipo, name, parametrosToAdd, methodReturnsThings, self.scopeAnterior)
         else:
             print(
-                f'Error, el método {name} ya fue declarado anteriormente. Linea: {line} columna: {column} ')
-            exit()
+                f'--> Error, el método {name} ya fue declarado anteriormente. Linea: {line} columna: {column} ')
+            # exit()
         # print("La variable existe", methodExists)
 
     def exitMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
@@ -171,42 +171,51 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 self.scopeActual)
             if(methodTypeFromTable == "void"):
                 print(
-                    f'ERROR. Un método tipo VOID no puede devolver algo. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
-                exit()
+                    f'--> ERROR. Un método tipo VOID no puede devolver algo. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
+                # exit()
             else:
                 value = ctx.expr().getText()
                 arrayVars = []
                 if((value == "true" or value == "false") and methodTypeFromTable != "boolean"):
                     print(
-                        f'ERROR. Variable boolean retornada en un método NO booleano "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    exit()
+                        f'--> ERROR. Variable boolean retornada en un método NO booleano "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    # exit()
                 elif(self.functions.checkIfIsInt(value) and methodTypeFromTable != "int"):
                     print(
-                        f'ERROR. Variable int retornada en un método NO INT "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    exit()
+                        f'--> ERROR. Variable int retornada en un método NO INT "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    # exit()
                 elif(self.functions.checkGeneraltype(value, "string") and methodTypeFromTable != "string"):
                     print(
-                        f'ERROR. Variable string retornada en un método NO STRING "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    exit()
+                        f'--> ERROR. Variable string retornada en un método NO STRING "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    # exit()
 
                 if(self.functions.checkIfIsInt(value) == False and value != "false" and value != "true" and self.functions.checkGeneraltype(value, "string") == False):
+                    if("." in value):
+                        indice = value.index(".")
+                        value = value[0:indice]
                     for i in range(len(value)):
-                        var = self.tablaSimbolos.getTypeVarDictVar(
-                            value[i], self.scopeActual)
-                        if isinstance(var, str) and len(var) > 0:
-                            arrayVars.append(var)
+                        varExistsReturn = self.tablaSimbolos.varExistsRecursivo(
+                            value[i], self.scopeActual, False)
+                        if(varExistsReturn == False):
+                            print(
+                                f'--> ERROR. La variable retornada NO existe  "{self.scopeActual}", linea: {ctx.start.line}')
+                            # exit()
+                        varinformation = self.tablaSimbolos.getVarInformationRecursivo(
+                            value[i], self.scopeActual, False, [])
+                        if isinstance(varinformation[1], str) and len(varinformation[1]) > 0:
+                            arrayVars.append(varinformation[1])
                         if not len(set(arrayVars)) <= 1:
                             print(
-                                f'ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
-                            exit()
+                                f'--> ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
+                            # exit()
                     e = ""
                     if(len(arrayVars) > 0):
                         e = next(iter(arrayVars))
                     # obtenemos el tipo de método
                     if(methodTypeFromTable != e):
                         print(
-                            f'ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        exit()
+                            f'--> ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        # exit()
 
         else:
             methodCallAsignacion = ""
@@ -230,16 +239,16 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     name, scope)
                 if(methodTypeFromTableV2 == "void"):
                     print(
-                        f'ERROR. Un metodo VOID no puede asignarse a una variable. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    exit()
+                        f'--> ERROR. Un metodo VOID no puede asignarse a una variable. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    # exit()
                 if(methodTypeFromTableV2 == ""):
                     print(
-                        f'ERROR. El método "{metodoAsignado}" NO existe y esta siendo asignado a la variable local "{name}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    exit()
+                        f'--> ERROR. El método "{metodoAsignado}" NO existe y esta siendo asignado a la variable local "{name}". linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    # exit()
                 elif(tipoGuardado != methodTypeFromTableV2):
                     print(
-                        f'ERROR. El método "{metodoAsignado}" tiene un tipo de retorno "{methodTypeFromTableV2}" y la variable local "{name}" es del tipo "{tipoGuardado}" NO CONCUERDAN . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    exit()
+                        f'--> ERROR. El método "{metodoAsignado}" tiene un tipo de retorno "{methodTypeFromTableV2}" y la variable local "{name}" es del tipo "{tipoGuardado}" NO CONCUERDAN . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    # exit()
                 # ahora verificamos que si necesita parámetros
                 parametrosMetodo = []
                 parametrosEnviados = ""  # variable para ver si NOSOTROS estamos mandando parametros
@@ -311,25 +320,25 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     # print("TIPOS DAODS ", tipoParametrosEnviar)
                     if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
                         print(
-                            f'ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        exit()
+                            f'--> ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        # exit()
                     for y in range(0, len(parametrosMetodo)):
                         if(tipoParametrosEnviar[y] != ""):
                             if(parametrosMetodo[y] != tipoParametrosEnviar[y]):
                                 print(
-                                    f'ERROR. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
                         else:
                             print(
-                                f'ERROR. Un parámetro enviado al método "{metodoAsignado}" NO ha sido DECLARADO.linea: {ctx.start.line} , columna: {ctx.start.column}')
-                            exit()
+                                f'--> ERROR. Un parámetro enviado al método "{metodoAsignado}" NO ha sido DECLARADO.linea: {ctx.start.line} , columna: {ctx.start.column}')
+                            # exit()
                     # revisamos globalmente
                     for y in range(0, len(parametrosMetodo)):
                         if(tipoParametrosEnviarGlobal[y] != ""):
                             if(parametrosMetodo[y] != tipoParametrosEnviarGlobal[y]):
                                 print(
-                                    f'ERROR2. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR2. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
             # este if es para ver si la llamada a un metodo es sin asignacion, solo normalmente
             elif(mehtodCallNormal != None and mehtodCallNormal != ""):
                 metodoAsignado = ctx.method_call().method_call_inter().method_name().getText()
@@ -339,8 +348,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     metodoAsignado)
                 if(methodTypeFromTableV2 == ""):
                     print(
-                        f'ERRORA2. El método "{metodoAsignado}" NO existe "{name}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    exit()
+                        f'--> ERRORA2. El método "{metodoAsignado}" NO existe "{name}". linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    # exit()
                 # ahora verificamos que si necesita parámetros
                 parametrosMetodo = []
                 parametrosEnviados = ""  # variable para ver si NOSOTROS estamos mandando parametros
@@ -414,27 +423,25 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     # print("TIPOS DAODS ", tipoParametrosEnviar)
                     if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
                         print(
-                            f'ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        exit()
+                            f'--> ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        # exit()
                     # Reviosamos localmente
                     for y in range(0, len(parametrosMetodo)):
                         if(tipoParametrosEnviar[y] != ""):
                             if(parametrosMetodo[y] != tipoParametrosEnviar[y]):
                                 print(
-                                    f'ERROR1. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR1. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
                     # revisamos globalmente
                     for y in range(0, len(parametrosMetodo)):
                         if(tipoParametrosEnviarGlobal[y] != ""):
                             if(parametrosMetodo[y] != tipoParametrosEnviarGlobal[y]):
                                 print(
-                                    f'ERROR2. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR2. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
 
             else:
                 if(ctx.IF() or ctx.WHILE()):
-                    print("hay if nuevo scope")
-                    print("scope antes del IF o WHILE", self.scopeActual)
                     self.conteoIfs += 1
                     scopeNuevo = ""
                     if(ctx.IF()):
@@ -443,7 +450,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         scopeNuevo = 'while'+str(self.conteoIfs)
                     self.scopeAnterior = self.scopeActual
                     self.scopeActual = scopeNuevo
-                    print("scope antes LUEGO  IF o WHILE", self.scopeActual)
+                    #print("scope antes LUEGO  IF o WHILE", self.scopeActual)
                     tipoVariableEqOps = ""
                     tipoVariablecondOps = ""
                     tipoVariableRelOps = ""
@@ -461,8 +468,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         pass
                     if(tipoVariableEqOps == "" and tipoVariablecondOps == "" and tipoVariableRelOps == ""):
                         print(
-                            f'ERROR. En una condicion, deben darse valores booleanos "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        exit()
+                            f'--> ERROR. En una condicion, deben darse valores booleanos "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        # exit()
                     # agregamos el nuevo if como metodo
                     self.tablaSimbolos.AddNewMethod_DictMethod(
                         "", scopeNuevo, [], False, self.scopeAnterior)
@@ -470,6 +477,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     arraySplitEqOps = []
                     # variables de cond OPS
                     arraySplitCondOps = []
+                    # variable para RelOPS
+                    arraySplitRelOps = []
                     if((tipoVariableEqOps == "==" or tipoVariableEqOps == "!=")
                             and tipoVariablecondOps == "" and tipoVariableRelOps == ""):
                         # hacemos split de cada valor y vamos a buscarlo
@@ -485,8 +494,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     valor1, self.scopeActual, False)
                                 if(varExists3 == False):
                                     print(
-                                        f'ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     varInformation = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor1, self.scopeActual, False, [])
@@ -494,15 +503,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno = varInformation[1]
                                     if(varTypeInterno != "boolean"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                             elif((valor1 == "true" or valor1 == "false") and (valor2 != "true" and valor2 != "false")):
                                 varExists3 = self.tablaSimbolos.varExistsRecursivo(
                                     valor2, self.scopeActual, False)
                                 if(varExists3 == False):
                                     print(
-                                        f'ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     varInformation = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor2, self.scopeActual, False, [])
@@ -510,15 +519,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno = varInformation[1]
                                     if(varTypeInterno != "boolean"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                             elif(self.functions.checkIfIsInt(valor1) and self.functions.checkIfIsInt(valor2) == False):
                                 varExists3 = self.tablaSimbolos.varExistsRecursivo(
                                     valor2, self.scopeActual, False)
                                 if(varExists3 == False):
                                     print(
-                                        f'ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     varInformation = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor2, self.scopeActual, False, [])
@@ -526,15 +535,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno = varInformation[1]
                                     if(varTypeInterno != "int"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                             elif(self.functions.checkIfIsInt(valor2) and (self.functions.checkIfIsInt(valor1) == False)):
                                 varExists3 = self.tablaSimbolos.varExistsRecursivo(
                                     valor1, self.scopeActual, False)
                                 if(varExists3 == False):
                                     print(
-                                        f'ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     varInformation = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor1, self.scopeActual, False, [])
@@ -542,15 +551,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno = varInformation[1]
                                     if(varTypeInterno != "int"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                             elif(self.functions.checkGeneraltype(valor1, "string") and self.functions.checkGeneraltype(valor2, "string") == False):
                                 varExists3 = self.tablaSimbolos.varExistsRecursivo(
                                     valor2, self.scopeActual, False)
                                 if(varExists3 == False):
                                     print(
-                                        f'ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     varInformation = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor2, self.scopeActual, False, [])
@@ -558,15 +567,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno = varInformation[1]
                                     if(varTypeInterno != "string"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                             elif(self.functions.checkGeneraltype(valor2, "string") and self.functions.checkGeneraltype(valor1, "string") == False):
                                 varExists3 = self.tablaSimbolos.varExistsRecursivo(
                                     valor1, self.scopeActual, False)
                                 if(varExists3 == False):
                                     print(
-                                        f'ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     varInformation = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor1, self.scopeActual, False, [])
@@ -574,8 +583,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno = varInformation[1]
                                     if(varTypeInterno != "string"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                             # condicion por si ambas son dle mismo valor, hacemos PASS
                             elif((valor2 == "true" or valor2 == "false") and (valor1 == "true" or valor1 == "false")):
                                 pass
@@ -591,16 +600,16 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     valor2, self.scopeActual, False)
                                 if(varExists3 == True and varExists4 == False):
                                     print(
-                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 elif(varExists3 == False and varExists4 == True):
                                     print(
-                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 elif(varExists3 == False and varExists4 == False):
                                     print(
-                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 elif(varExists3 == True and varExists4 == True):
                                     varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor1, self.scopeActual, False, [])
@@ -611,8 +620,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno2 = varInformation2[1]
                                     if(varTypeInterno1 != varTypeInterno2):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                                 # variables de  cond_OPS
                     if((tipoVariablecondOps == "&&" or tipoVariablecondOps == "||")
                             and tipoVariableEqOps == "" and tipoVariableRelOps == ""):
@@ -629,8 +638,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     valor1, self.scopeActual, False)
                                 if(varExistsValor1 == False):
                                     print(
-                                        f'ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     varInformation = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor1, self.scopeActual, False, [])
@@ -638,15 +647,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno = varInformation[1]
                                     if(varTypeInterno != "boolean"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                             elif((valor1 == "true" or valor1 == "false") and (valor2 != "true" and valor2 != "false")):
                                 varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
                                     valor2, self.scopeActual, False)
                                 if(varExistsValor1 == False):
                                     print(
-                                        f'ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     varInformation = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor2, self.scopeActual, False, [])
@@ -654,24 +663,24 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno = varInformation[1]
                                     if(varTypeInterno != "boolean"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                             elif(self.functions.checkIfIsInt(valor1)):
                                 print(
-                                    f'ERROR. La variable "{valor1}" es INT pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR. La variable "{valor1}" es INT pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
                             elif(self.functions.checkIfIsInt(valor2)):
                                 print(
-                                    f'ERROR. La variable "{valor2}" es INT pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR. La variable "{valor2}" es INT pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
                             elif(self.functions.checkGeneraltype(valor1, "string")):
                                 print(
-                                    f'ERROR. La variable "{valor1}" es STRING pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR. La variable "{valor1}" es STRING pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
                             elif(self.functions.checkGeneraltype(valor2, "string")):
                                 print(
-                                    f'ERROR. La variable "{valor2}" es STRING pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR. La variable "{valor2}" es STRING pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
                             # condicion por si ambas son dle mismo valor, hacemos PASS
                             elif((valor2 == "true" or valor2 == "false") and (valor1 == "true" or valor1 == "false")):
                                 pass
@@ -687,16 +696,16 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     valor2, self.scopeActual, False)
                                 if(varExistsValor1 == True and varExistsValor2 == False):
                                     print(
-                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 elif(varExistsValor1 == False and varExistsValor2 == True):
                                     print(
-                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 elif(varExistsValor1 == False and varExistsValor2 == False):
                                     print(
-                                        f'ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 elif(varExistsValor1 == True and varExistsValor2 == True):
                                     varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
                                         valor1, self.scopeActual, False, [])
@@ -707,20 +716,113 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     varTypeInterno2 = varInformation2[1]
                                     if(varTypeInterno1 != "boolean" or varTypeInterno2 != "boolean"):
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                                     elif(varTypeInterno1 == "boolean" and varTypeInterno2 == "boolean"):
                                         pass
                                     else:
                                         print(
-                                            f'ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
 
                     # variables de REL_OPS
                     elif((tipoVariableRelOps == "<" or tipoVariableRelOps == "<=" or
                           tipoVariableRelOps == ">" or tipoVariableRelOps == ">=")
                             and tipoVariableEqOps == "" and tipoVariablecondOps == ""):
-                        print("variableRelOps")
+                        arraySplitRelOps = ctx.expr().getText().split(tipoVariableRelOps)
+                        valor1 = arraySplitRelOps[0]
+                        valor2 = arraySplitRelOps[1]
+                        varExistsValor1 = ""
+                        varExistsValor2 = ""
+                        for x in arraySplitRelOps:
+                            if(self.functions.checkIfIsInt(valor1) and self.functions.checkIfIsInt(valor2) == False):
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor2, self.scopeActual, False)
+                                if(varExists3 == False):
+                                    print(
+                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
+                                else:
+                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor2, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno = varInformation[1]
+                                    if(varTypeInterno != "int"):
+                                        print(
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                            elif(self.functions.checkIfIsInt(valor2) and (self.functions.checkIfIsInt(valor1) == False)):
+                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor1, self.scopeActual, False)
+                                if(varExists3 == False):
+                                    print(
+                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
+                                else:
+                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor1, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno = varInformation[1]
+                                    if(varTypeInterno != "int"):
+                                        print(
+                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                            elif(valor2 == "true" or valor2 == "false"):
+                                print(
+                                    f'--> ERROR. La variable "{valor2}" es BOOLEAN pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
+                            elif(valor1 == "true" or valor1 == "false"):
+                                print(
+                                    f'--> ERROR. La variable "{valor1}" es BOOLEAN pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
+                            elif(self.functions.checkGeneraltype(valor1, "string")):
+                                print(
+                                    f'--> ERROR. La variable "{valor1}" es STRING pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
+                            elif(self.functions.checkGeneraltype(valor2, "string")):
+                                print(
+                                    f'--> ERROR. La variable "{valor2}" es STRING pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
+                            # condicion por si ambas son dle mismo valor, hacemos PASS
+                            elif(self.functions.checkIfIsInt(valor2) and self.functions.checkIfIsInt(valor1)):
+                                pass
+                            else:
+                                # verificamos ambas variables
+                                varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor1, self.scopeActual, False)
+                                varExistsValor2 = self.tablaSimbolos.varExistsRecursivo(
+                                    valor2, self.scopeActual, False)
+                                if(varExistsValor1 == True and varExistsValor2 == False):
+                                    print(
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
+                                elif(varExistsValor1 == False and varExistsValor2 == True):
+                                    print(
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
+                                elif(varExistsValor1 == False and varExistsValor2 == False):
+                                    print(
+                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
+                                elif(varExistsValor1 == True and varExistsValor2 == True):
+                                    varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor1, self.scopeActual, False, [])
+                                    varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                        valor2, self.scopeActual, False, [])
+                                    # el tipo de variable
+                                    varTypeInterno1 = varInformation1[1]
+                                    varTypeInterno2 = varInformation2[1]
+                                    if(varTypeInterno1 != "int" or varTypeInterno2 != "int"):
+                                        print(
+                                            f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varTypeInterno1 == "int" and varTypeInterno2 == "int"):
+                                        pass
+                                    else:
+                                        print(
+                                            f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo INT "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+
                 elif(ctx.assign_op().EQUAL_OP()):  # logica cuando asignamos del lado derecho
                     valorAsignado = ctx.expr().getText()
                     expresionEntera = ctx.expr().getText()
@@ -743,19 +845,34 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                             hijo, scope, False, [])
                                         if(informationHijo[1] != "int"):
                                             print(
-                                                f'ERROR_DECLARACION. La variable o valor "{hijo}" NO es del tipo INT. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            exit()
+                                                f'--> ERROR_DECLARACION. La variable o valor "{hijo}" NO es del tipo INT. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                                     else:
                                         print(
-                                            f'ERROR_DECLARACION. La variable o valor "{hijo}" NO existe o es no puede ser usado en una operacion aritmética. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
-
+                                            f'--> ERROR_DECLARACION. La variable o valor "{hijo}" NO existe o es no puede ser usado en una operacion aritmética. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                    try:
+                        nameVaria = ctx.location().getText()  # el nombre de la variable
+                    except:
+                        pass
                     line = ctx.start.line
                     column = ctx.start.column
                     scope = self.scopeActual
                     arrayinformation = []
+                    hasAnotherSon = False
+                    try:
+                        innerLocation = ctx.location().location()
+                        if(innerLocation != None):
+                            hasAnotherSon = True
+                    except:
+                        pass
+
+                    if(hasAnotherSon):
+                        print("LOGICA para 2 hijos ")
+                    else:
+                        print("logica para normal")
                     if("+" in valorAsignado or "-" in valorAsignado or "/" in valorAsignado or "*" in valorAsignado or "%" in valorAsignado):
-                        print("es una operacion aritmética")
+                        pass
                     else:
                         # si nos topamos con un array
                         if("[" in name and "]" in name):
@@ -769,12 +886,12 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     valorAsignado, 'int')
                                 if(typeMatchValor == False):
                                     print(
-                                        f'ERROR_ARRAY. La variable "{name}" se le esta pasando como valor en el corchete el valor de {valorAsignado} un valor NO INT . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR_ARRAY. La variable "{name}" se le esta pasando como valor en el corchete el valor de {valorAsignado} un valor NO INT . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                             else:
                                 print(
-                                    f'ERROR_ARRAY. La variable {name} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                exit()
+                                    f'--> ERROR_ARRAY. La variable {name} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                # exit()
 
                         else:
                             varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
@@ -787,8 +904,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     valorAsignado, tipoGuardado)
                                 if(typeMatch == False):
                                     print(
-                                        f'ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR3. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
                                 else:
                                     print("")
                                     # print("PRINT LOCAL", name)
@@ -804,15 +921,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                         valorAsignado, tipoGuardado)
                                     if(typeMatch == False):
                                         print(
-                                            f'ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        exit()
+                                            f'--> ERROR1. La variable {tipoGuardado} -> {name} <- está siendo asignada con el valor {valorAsignado} pero no son el mismo TIPO. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
                                     else:
                                         print("PRINT GLOBAL")
 
                                 elif(varExists2 == False):
                                     print(
-                                        f'ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    exit()
+                                        f'--> ERROR2. La variable -> {name} <- está siendo asignada con el valor {valorAsignado} ANTES de ser declarada. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    # exit()
 
                 # print(self.tablaSimbolos.getDictVar())
 
@@ -841,7 +958,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         arrayValue, False)
                     if(hasError):
                         print(errorValue)
-                        exit()
+                        # exit()
                 else:
                     oldArrayValue = arrayValue
                     varExistsInner, arrayValue = self.tablaSimbolos.checkVarInVarSymbolTable(
@@ -854,11 +971,11 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             arrayValue, True)
                         if(hasError):
                             print(errorValue)
-                            exit()
+                            # exit()
                     else:
                         print(
-                            f'La variable o valor "{oldArrayValue}" no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
-                        exit()
+                            f'--> ERROR. La variable o valor "{oldArrayValue}" no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
+                        # exit()
 
                 # we add the array to the struct table
                 self.tablaSimbolos.AddNewStruct_DictStruct(
@@ -872,8 +989,8 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 self.tablaSimbolos.AddNewVar_DictVar(name, tipo, scope, 0, 0)
             elif(varExists == True):
                 print(
-                    f'Error, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
-                exit()
+                    f'--> Error, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
+                # exit()
             # ya tenemos las variables actuales
             # print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
 
@@ -891,18 +1008,18 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 arrayValue, False)
             if(hasError):
                 print(errorValue)
-                exit()
+                # exit()
         elif(self.functions.checkIfIsInt(arrayValue) == False):
             print(
-                f' El valor DENTRO de un corchete de array debe ser INT. La variable o valor "{arrayValue}" no lo es. Linea: {line} columna: {column} ')
-            exit()
+                f'-->  ERROR . El valor DENTRO de un corchete de array debe ser INT. La variable o valor "{arrayValue}" no lo es. Linea: {line} columna: {column} ')
+            # exit()
         else:
             varExists = self.tablaSimbolos.checkStructInStructSymbolTableV2(
                 arrayValue)
             if(varExists == False):
                 print(
-                    f'ERROR_ARRAY. La variable {arrayValue} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                exit()
+                    f'--> ERROR_ARRAY. La variable {arrayValue} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
+                # exit()
 
 
 def main():
