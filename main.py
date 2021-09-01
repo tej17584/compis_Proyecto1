@@ -197,6 +197,13 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         indice = value.index(".")
                         variableEstructura = value[0:indice]
                         variableDentroEstructura = value[indice+1:len(value)]
+                        # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
+                        if("[" in variableEstructura or "]" in variableEstructura):
+                            indexCorchete = variableEstructura.index("[")
+                            variableEstructura = variableEstructura[0: indexCorchete]
+                        if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
+                            indexCorchete = variableDentroEstructura.index("[")
+                            variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
                         # mandamos ambos parametros
                         structExists = self.tablaSimbolos.varExistsRecursivo(
                             variableEstructura, self.scopeActual, False)
@@ -258,6 +265,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 pass
             # este if es para ver si la llamada a un método es con asignacion
             if(methodCallAsignacion != None and methodCallAsignacion != ""):
+                tipoGuardado = ""
                 metodoAsignado = ctx.expr().method_call().method_call_inter().method_name().getText()
                 # verificamos si deberia poder retornar algo
                 scope = self.scopeActual
@@ -281,25 +289,57 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
                         informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
                             variableEstructura, self.scopeActual, False, [])
-                        innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                            variableDentroEstructura, informacionStruct[1])
-                        if(innerVarExists):
-                            # obtenemos la información de la variable DENTRO de la estructura
-                            informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                variableDentroEstructura, informacionStruct[1], False, [])
-                            # obtenemos el tipo de dato
-                            tipoDatoInnerVariable = informacionInnerVarStruct[1]
-                            tipoGuardado = tipoDatoInnerVariable  # lo asignamos a la variable
+                        if("." in variableDentroEstructura):  # si por casualidad tenemos OTRO nivel
+                            indice2 = variableDentroEstructura.index(".")
+                            # c
+                            variableEstructura2 = variableDentroEstructura[0:indice2]
+                            # a
+                            variableDentroEstructura2 = variableDentroEstructura[indice2+1:len(
+                                variableDentroEstructura)]
+                            structExists2 = self.tablaSimbolos.varExistsRecursivo(
+                                variableEstructura2, informacionStruct[1], False)
+                            if(structExists2):  # si la estructura existe
+                                # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                informacionStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                    variableEstructura2, informacionStruct[1], False, [])
+                                innerVarExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                    variableDentroEstructura2, informacionStruct2[1])
+                                if(innerVarExists2):
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct2[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    tipoDatoInnerVariable2 = informacionInnerVarStruct2[1]
+                                    tipoGuardado = tipoDatoInnerVariable2  # lo asignamos a la variable
+                                else:
+                                    print(
+                                        f'--> ERROR33333. Variable anidada "{variableDentroEstructura2}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                            else:
+                                print(
+                                    f'--> ERROR. Variable anidada {variableEstructura2} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                         else:
-                            print(
-                                f'--> ERROR. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                            innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                variableDentroEstructura, informacionStruct[1])
+                            if(innerVarExists):
+                                # obtenemos la información de la variable DENTRO de la estructura
+                                informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                    variableDentroEstructura, informacionStruct[1], False, [])
+                                # obtenemos el tipo de dato
+                                tipoDatoInnerVariable = informacionInnerVarStruct[1]
+                                tipoGuardado = tipoDatoInnerVariable  # lo asignamos a la variable
+                            else:
+                                print(
+                                    f'--> ERROR33333. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                     else:  # si no existe
                         print(
                             f'--> ERROR. Variable {variableEstructura} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
 
                 else:  # es una variable NORMAL
-                    tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                        name, scope)
+                    # obtenemos la informacion
+                    # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                    informationVariable = self.tablaSimbolos.getVarInformationRecursivo(
+                        name, scope, False, [])
+                    tipoGuardado = informationVariable[1]
 
                 if(methodTypeFromTableV2 == "void"):
                     print(
@@ -315,6 +355,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     # exit()
                 # ahora verificamos que si necesita parámetros
                 parametrosMetodo = []
+                tipoParametroEnviado = ""
                 parametrosEnviados = ""  # variable para ver si NOSOTROS estamos mandando parametros
                 parametrosMetodo = self.tablaSimbolos.getParametersTypeDictMethods(
                     metodoAsignado)
@@ -356,6 +397,22 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 canTryAgain = False
                             except:
                                 pass
+                        if(canTryAgain):  # por si es metodo
+                            try:
+                                interTry = parametrosEnviados[x].method_call(
+                                ).getText()
+                                tipoParametroEnviado = "metodo"
+                                canTryAgain = False
+                            except:
+                                pass
+                        if(canTryAgain):  # por si es estructura
+                            try:
+                                interTry = parametrosEnviados[x].location(
+                                ).array_id().getText()
+                                tipoParametroEnviado = "array"
+                                canTryAgain = False
+                            except:
+                                pass
                         if(tipoParametroEnviado == "variable"):
                             nombreParametro = parametrosEnviados[x].location(
                             ).var_id().getText()
@@ -381,6 +438,82 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             ).int_literal().getText()
                             tipoParametrosEnviar.append("int")
                             tipoParametrosEnviarGlobal.append("int")
+                        elif(tipoParametroEnviado == "metodo"):
+                            nombreParametro = parametrosEnviados[x].method_call(
+                            ).getText()
+                            if("(" in nombreParametro):
+                                nombreParametro = nombreParametro.replace(
+                                    "(", "")
+                            if(")" in nombreParametro):
+                                nombreParametro = nombreParametro.replace(
+                                    ")", "")
+                            # obtenemos el tipo de método
+                            tipoMetodo = self.tablaSimbolos.getTypeMethodDictMethods(
+                                nombreParametro)
+                            tipoParametrosEnviar.append(tipoMetodo)
+                            tipoParametrosEnviarGlobal.append(tipoMetodo)
+                        elif(tipoParametroEnviado == "array"):
+                            nombreArray = parametrosEnviados[x].location(
+                            ).array_id().getText()
+                            if("." in nombreArray):  # es una estructura
+                                indice = nombreArray.index(".")
+                                variableEstructura = nombreArray[0:indice]
+                                variableDentroEstructura = nombreArray[indice + 1:len(
+                                    nombreArray)]
+                                # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
+                                if("[" in variableEstructura or "]" in variableEstructura):
+                                    indexCorchete = variableEstructura.index(
+                                        "[")
+                                    variableEstructura = variableEstructura[0: indexCorchete]
+                                if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
+                                    indexCorchete = variableDentroEstructura.index(
+                                        "[")
+                                    variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
+                                # si tenemos otro nivel
+                                if("." in variableDentroEstructura):
+                                    print("anidado")
+                                    # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura, self.scopeActual, False, [])
+                                    indice2 = variableDentroEstructura.index(
+                                        ".")
+                                    variableEstructura2 = variableDentroEstructura[0:indice2]
+                                    variableDentroEstructura2 = variableDentroEstructura[indice2 + 1:len(
+                                        variableDentroEstructura)]
+                                    # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                    informacionStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, informacionStruct[1], False, [])
+                                    informacionInnerVarStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct2[1], False, [])
+                                    tipoDatoInnerVariable2 = informacionInnerVarStruct2[1]
+                                    tipoParametrosEnviar.append(
+                                        tipoDatoInnerVariable2)
+                                    tipoParametrosEnviarGlobal.append(
+                                        tipoDatoInnerVariable2)
+                                else:
+                                    # probamos si existe la struct
+                                    structExists = self.tablaSimbolos.varExistsRecursivo(
+                                        variableEstructura, self.scopeActual, False)
+                                    if(structExists):
+                                        # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                        informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                            variableEstructura, self.scopeActual, False, [])
+                                        innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                            variableDentroEstructura, informacionStruct[1])
+                                        if(innerVarExists):
+                                            informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                                variableDentroEstructura, informacionStruct[1], False, [])
+                                            tipoDatoInnerVariable = informacionInnerVarStruct[1]
+                                            tipoParametrosEnviar.append(
+                                                tipoDatoInnerVariable)
+                                            tipoParametrosEnviarGlobal.append(
+                                                tipoDatoInnerVariable)
+                                        else:
+                                            print(
+                                                f'--> ERROR. La estructura o un valor interno de parámetro enviado no existe "{variableEstructura}" .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                    else:
+                                        print(
+                                            f'--> ERROR. La estructura de parámetro enviado no existe "{variableEstructura}" .linea: {ctx.start.line} , columna: {ctx.start.column}')
                     # print("TIPOS DAODS ", tipoParametrosEnviar)
                     if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
                         print(
@@ -458,6 +591,22 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                     canTryAgain = False
                                 except:
                                     pass
+                            if(canTryAgain):  # por si es metodo
+                                try:
+                                    interTry = parametrosEnviados[x].method_call(
+                                    ).getText()
+                                    tipoParametroEnviado = "metodo"
+                                    canTryAgain = False
+                                except:
+                                    pass
+                            if(canTryAgain):  # por si es estructura
+                                try:
+                                    interTry = parametrosEnviados[x].location(
+                                    ).array_id().getText()
+                                    tipoParametroEnviado = "array"
+                                    canTryAgain = False
+                                except:
+                                    pass
 
                             if(tipoParametroEnviado == "variable"):
                                 nombreParametro = parametrosEnviados[x].location(
@@ -484,10 +633,85 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 ).int_literal().getText()
                                 tipoParametrosEnviar.append("int")
                                 tipoParametrosEnviarGlobal.append("int")
+                            elif(tipoParametroEnviado == "metodo"):
+                                nombreParametro = parametrosEnviados[x].method_call(
+                                ).getText()
+                                if("(" in nombreParametro):
+                                    nombreParametro = nombreParametro.replace(
+                                        "(", "")
+                                if(")" in nombreParametro):
+                                    nombreParametro = nombreParametro.replace(
+                                        ")", "")
+                                # obtenemos el tipo de método
+                                tipoMetodo = self.tablaSimbolos.getTypeMethodDictMethods(
+                                    nombreParametro)
+                                tipoParametrosEnviar.append(tipoMetodo)
+                                tipoParametrosEnviarGlobal.append(tipoMetodo)
+                            elif(tipoParametroEnviado == "array"):
+                                nombreArray = parametrosEnviados[x].location(
+                                ).array_id().getText()
+                                if("." in nombreArray):  # es una estructura
+                                    indice = nombreArray.index(".")
+                                    variableEstructura = nombreArray[0:indice]
+                                    variableDentroEstructura = nombreArray[indice + 1:len(
+                                        nombreArray)]
+                                    # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
+                                    if("[" in variableEstructura or "]" in variableEstructura):
+                                        indexCorchete = variableEstructura.index(
+                                            "[")
+                                        variableEstructura = variableEstructura[0: indexCorchete]
+                                    if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
+                                        indexCorchete = variableDentroEstructura.index(
+                                            "[")
+                                        variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
+                                    # si tenemos otro nivel
+                                    if("." in variableDentroEstructura):
+                                        # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                        informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                            variableEstructura, self.scopeActual, False, [])
+                                        indice2 = variableDentroEstructura.index(
+                                            ".")
+                                        variableEstructura2 = variableDentroEstructura[0:indice2]
+                                        variableDentroEstructura2 = variableDentroEstructura[indice2 + 1:len(
+                                            variableDentroEstructura)]
+                                        # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                        informacionStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            variableEstructura2, informacionStruct[1], False, [])
+                                        informacionInnerVarStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            variableDentroEstructura2, informacionStruct2[1], False, [])
+                                        tipoDatoInnerVariable2 = informacionInnerVarStruct2[1]
+                                        tipoParametrosEnviar.append(
+                                            tipoDatoInnerVariable2)
+                                        tipoParametrosEnviarGlobal.append(
+                                            tipoDatoInnerVariable2)
+                                    else:
+                                        # probamos si existe la struct
+                                        structExists = self.tablaSimbolos.varExistsRecursivo(
+                                            variableEstructura, self.scopeActual, False)
+                                        if(structExists):
+                                            # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                            informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                                variableEstructura, self.scopeActual, False, [])
+                                            innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                                                variableDentroEstructura, informacionStruct[1])
+                                            if(innerVarExists):
+                                                informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                                    variableDentroEstructura, informacionStruct[1], False, [])
+                                                tipoDatoInnerVariable = informacionInnerVarStruct[1]
+                                                tipoParametrosEnviar.append(
+                                                    tipoDatoInnerVariable)
+                                                tipoParametrosEnviarGlobal.append(
+                                                    tipoDatoInnerVariable)
+                                            else:
+                                                print(
+                                                    f'--> ERROR. La estructura o un valor interno de parámetro enviado no existe "{variableEstructura}" .linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        else:
+                                            print(
+                                                f'--> ERROR. La estructura de parámetro enviado no existe "{variableEstructura}" .linea: {ctx.start.line} , columna: {ctx.start.column}')
                     # print("TIPOS DAODS ", tipoParametrosEnviar)
                     if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
                         print(
-                            f'--> ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
+                            f'--> ERROR22. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
                         # exit()
                     # Reviosamos localmente
                     for y in range(0, len(parametrosMetodo)):
@@ -549,106 +773,215 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         arraySplitEqOps = ctx.expr().getText().split(tipoVariableEqOps)
                         valor1 = arraySplitEqOps[0]
                         valor2 = arraySplitEqOps[1]
+                        # si lo que tenemos tiene un valor de estructura
+                        variableEstructura1 = ""
+                        variableDentroEstructura1 = ""
+                        variableEstructura2 = ""
+                        variableDentroEstructura2 = ""
+                        if("." in valor1):
+                            indice = valor1.index(".")
+                            variableEstructura1 = valor1[0:indice]
+                            variableDentroEstructura1 = valor1[indice +
+                                                               1:len(valor1)]
+                        if("." in valor2):
+                            indice = valor2.index(".")
+                            variableEstructura2 = valor2[0:indice]
+                            variableDentroEstructura2 = valor2[indice +
+                                                               1:len(valor2)]
+                        # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
+                        if("[" in variableEstructura1 or "]" in variableEstructura1):
+                            indexCorchete = variableEstructura1.index("[")
+                            variableEstructura1 = variableEstructura1[0: indexCorchete]
+                        if("[" in variableDentroEstructura1 or "]" in variableDentroEstructura1):
+                            indexCorchete = variableDentroEstructura1.index(
+                                "[")
+                            variableDentroEstructura1 = variableDentroEstructura1[0: indexCorchete]
+                        if("[" in variableEstructura2 or "]" in variableEstructura2):
+                            indexCorchete = variableEstructura2.index("[")
+                            variableEstructura2 = variableEstructura2[0: indexCorchete]
+                        if("[" in variableDentroEstructura2 or "]" in variableDentroEstructura2):
+                            indexCorchete = variableDentroEstructura2.index(
+                                "[")
+                            variableDentroEstructura2 = variableDentroEstructura2[0: indexCorchete]
+
                         varExists3 = ""
                         varExists4 = ""
                         varInformation = []
                         for x in arraySplitEqOps:
                             if((valor2 == "true" or valor2 == "false") and (valor1 != "true" and valor1 != "false")):
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor1, self.scopeActual, False)
-                                if(varExists3 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor1, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor1):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura1, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura1, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "boolean"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "boolean"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif((valor1 == "true" or valor1 == "false") and (valor2 != "true" and valor2 != "false")):
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor2, self.scopeActual, False)
-                                if(varExists3 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor2, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor2):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "boolean"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "boolean"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif(self.functions.checkIfIsInt(valor1) and self.functions.checkIfIsInt(valor2) == False):
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor2, self.scopeActual, False)
-                                if(varExists3 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor2, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor2):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "int"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "int"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif(self.functions.checkIfIsInt(valor2) and (self.functions.checkIfIsInt(valor1) == False)):
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor1, self.scopeActual, False)
-                                if(varExists3 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor1, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor1):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura1, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura1, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "int"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR33. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "int"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif(self.functions.checkGeneraltype(valor1, "string") and self.functions.checkGeneraltype(valor2, "string") == False):
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor2, self.scopeActual, False)
-                                if(varExists3 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor2, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor2):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "string"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "string"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif(self.functions.checkGeneraltype(valor2, "string") and self.functions.checkGeneraltype(valor1, "string") == False):
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor1, self.scopeActual, False)
-                                if(varExists3 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor1, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor1):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura1, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura1, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "string"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "string"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             # condicion por si ambas son dle mismo valor, hacemos PASS
                             elif((valor2 == "true" or valor2 == "false") and (valor1 == "true" or valor1 == "false")):
                                 pass
@@ -657,35 +990,86 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             elif(self.functions.checkGeneraltype(valor2, "string") and self.functions.checkGeneraltype(valor1, "string")):
                                 pass
                             else:
-                                # verificamos ambas variables
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor1, self.scopeActual, False)
-                                varExists4 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor2, self.scopeActual, False)
-                                if(varExists3 == True and varExists4 == False):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExists3 == False and varExists4 == True):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExists3 == False and varExists4 == False):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExists3 == True and varExists4 == True):
-                                    varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor1, self.scopeActual, False, [])
-                                    varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor2, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno1 = varInformation1[1]
-                                    varTypeInterno2 = varInformation2[1]
-                                    if(varTypeInterno1 != varTypeInterno2):
+                                varTypeInterno1 = ""
+                                varTypeInterno2 = ""
+                                if("." in valor1):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura1, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura1, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno1 = informacionInnerVarStruct[1]
+                                    # verificamos la otra variable
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    if(varExists3 == False):
                                         print(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        varTypeInterno2 = varInformation2[1]
+                                        if(varTypeInterno1 != varTypeInterno2):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                elif("." in valor2):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno2 = informacionInnerVarStruct[1]
+                                    # verificamos la otra variable
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    else:
+                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        varTypeInterno1 = varInformation1[1]
+                                        if(varTypeInterno1 != varTypeInterno2):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                else:
+                                    # verificamos ambas variables
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    varExists4 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == True and varExists4 == False):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExists3 == False and varExists4 == True):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExists3 == False and varExists4 == False):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExists3 == True and varExists4 == True):
+                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno1 = varInformation1[1]
+                                        varTypeInterno2 = varInformation2[1]
+                                        if(varTypeInterno1 != varTypeInterno2):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                                 # variables de  cond_OPS
                     if((tipoVariablecondOps == "&&" or tipoVariablecondOps == "||")
                             and tipoVariableEqOps == "" and tipoVariableRelOps == ""):
@@ -694,41 +1078,98 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         arraySplitCondOps = ctx.expr().getText().split(tipoVariablecondOps)
                         valor1 = arraySplitCondOps[0]
                         valor2 = arraySplitCondOps[1]
+                        # si lo que tenemos tiene un valor de estructura
+                        variableEstructura1 = ""
+                        variableDentroEstructura1 = ""
+                        variableEstructura2 = ""
+                        variableDentroEstructura2 = ""
+                        if("." in valor1):
+                            indice = valor1.index(".")
+                            variableEstructura1 = valor1[0:indice]
+                            variableDentroEstructura1 = valor1[indice +
+                                                               1:len(valor1)]
+                        if("." in valor2):
+                            indice = valor2.index(".")
+                            variableEstructura2 = valor2[0:indice]
+                            variableDentroEstructura2 = valor2[indice +
+                                                               1:len(valor2)]
+                        # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
+                        if("[" in variableEstructura1 or "]" in variableEstructura1):
+                            indexCorchete = variableEstructura1.index("[")
+                            variableEstructura1 = variableEstructura1[0: indexCorchete]
+                        if("[" in variableDentroEstructura1 or "]" in variableDentroEstructura1):
+                            indexCorchete = variableDentroEstructura1.index(
+                                "[")
+                            variableDentroEstructura1 = variableDentroEstructura1[0: indexCorchete]
+                        if("[" in variableEstructura2 or "]" in variableEstructura2):
+                            indexCorchete = variableEstructura2.index("[")
+                            variableEstructura2 = variableEstructura2[0: indexCorchete]
+                        if("[" in variableDentroEstructura2 or "]" in variableDentroEstructura2):
+                            indexCorchete = variableDentroEstructura2.index(
+                                "[")
+                            variableDentroEstructura2 = variableDentroEstructura2[0: indexCorchete]
+
                         varExistsValor1 = ""
                         varExistsValor2 = ""
                         for x in arraySplitCondOps:
                             if((valor2 == "true" or valor2 == "false") and (valor1 != "true" and valor1 != "false")):
-                                varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor1, self.scopeActual, False)
-                                if(varExistsValor1 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor1, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor1):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura1, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura1, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "boolean"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    if(varExistsValor1 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "boolean"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif((valor1 == "true" or valor1 == "false") and (valor2 != "true" and valor2 != "false")):
-                                varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor2, self.scopeActual, False)
-                                if(varExistsValor1 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor2, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor2):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "boolean"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExistsValor1 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "boolean"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif(self.functions.checkIfIsInt(valor1)):
                                 print(
                                     f'--> ERROR. La variable "{valor1}" es INT pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
@@ -753,41 +1194,105 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             elif(self.functions.checkGeneraltype(valor2, "string") and self.functions.checkGeneraltype(valor1, "string")):
                                 pass
                             else:
-                                # verificamos ambas variables
-                                varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor1, self.scopeActual, False)
-                                varExistsValor2 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor2, self.scopeActual, False)
-                                if(varExistsValor1 == True and varExistsValor2 == False):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExistsValor1 == False and varExistsValor2 == True):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExistsValor1 == False and varExistsValor2 == False):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExistsValor1 == True and varExistsValor2 == True):
-                                    varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor1, self.scopeActual, False, [])
-                                    varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor2, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno1 = varInformation1[1]
-                                    varTypeInterno2 = varInformation2[1]
-                                    if(varTypeInterno1 != "boolean" or varTypeInterno2 != "boolean"):
+                                varTypeInterno1 = ""
+                                varTypeInterno2 = ""
+                                if("." in valor1):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura1, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura1, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno1 = informacionInnerVarStruct[1]
+                                    # verificamos la otra variable
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
                                         print(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
-                                    elif(varTypeInterno1 == "boolean" and varTypeInterno2 == "boolean"):
-                                        pass
                                     else:
+                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        varTypeInterno2 = varInformation2[1]
+
+                                        if(varTypeInterno1 != "boolean" or varTypeInterno2 != "boolean"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                        elif(varTypeInterno1 == "boolean" and varTypeInterno2 == "boolean"):
+                                            pass
+                                        else:
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                elif("." in valor2):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno2 = informacionInnerVarStruct[1]
+                                    # verificamos la otra variable
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
                                         print(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        varTypeInterno1 = varInformation1[1]
+                                        if(varTypeInterno1 != "boolean" or varTypeInterno2 != "boolean"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                        elif(varTypeInterno1 == "boolean" and varTypeInterno2 == "boolean"):
+                                            pass
+                                        else:
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                else:
+                                    # verificamos ambas variables
+                                    varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    varExistsValor2 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExistsValor1 == True and varExistsValor2 == False):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExistsValor1 == False and varExistsValor2 == True):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExistsValor1 == False and varExistsValor2 == False):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExistsValor1 == True and varExistsValor2 == True):
+                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno1 = varInformation1[1]
+                                        varTypeInterno2 = varInformation2[1]
+                                        if(varTypeInterno1 != "boolean" or varTypeInterno2 != "boolean"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                        elif(varTypeInterno1 == "boolean" and varTypeInterno2 == "boolean"):
+                                            pass
+                                        else:
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
 
                     # variables de REL_OPS
                     elif((tipoVariableRelOps == "<" or tipoVariableRelOps == "<=" or
@@ -796,41 +1301,98 @@ class decafAlejandroPrinter(decafAlejandroListener):
                         arraySplitRelOps = ctx.expr().getText().split(tipoVariableRelOps)
                         valor1 = arraySplitRelOps[0]
                         valor2 = arraySplitRelOps[1]
+                        # si lo que tenemos tiene un valor de estructura
+                        variableEstructura1 = ""
+                        variableDentroEstructura1 = ""
+                        variableEstructura2 = ""
+                        variableDentroEstructura2 = ""
+                        if("." in valor1):
+                            indice = valor1.index(".")
+                            variableEstructura1 = valor1[0:indice]
+                            variableDentroEstructura1 = valor1[indice +
+                                                               1:len(valor1)]
+                        if("." in valor2):
+                            indice = valor2.index(".")
+                            variableEstructura2 = valor2[0:indice]
+                            variableDentroEstructura2 = valor2[indice +
+                                                               1:len(valor1)]
+                        # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
+                        if("[" in variableEstructura1 or "]" in variableEstructura1):
+                            indexCorchete = variableEstructura1.index("[")
+                            variableEstructura1 = variableEstructura1[0: indexCorchete]
+                        if("[" in variableDentroEstructura1 or "]" in variableDentroEstructura1):
+                            indexCorchete = variableDentroEstructura1.index(
+                                "[")
+                            variableDentroEstructura1 = variableDentroEstructura1[0: indexCorchete]
+                        if("[" in variableEstructura2 or "]" in variableEstructura2):
+                            indexCorchete = variableEstructura2.index("[")
+                            variableEstructura2 = variableEstructura2[0: indexCorchete]
+                        if("[" in variableDentroEstructura2 or "]" in variableDentroEstructura2):
+                            indexCorchete = variableDentroEstructura2.index(
+                                "[")
+                            variableDentroEstructura2 = variableDentroEstructura2[0: indexCorchete]
+
                         varExistsValor1 = ""
                         varExistsValor2 = ""
                         for x in arraySplitRelOps:
                             if(self.functions.checkIfIsInt(valor1) and self.functions.checkIfIsInt(valor2) == False):
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor2, self.scopeActual, False)
-                                if(varExists3 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor2, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor2):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "int"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "int"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif(self.functions.checkIfIsInt(valor2) and (self.functions.checkIfIsInt(valor1) == False)):
-                                varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor1, self.scopeActual, False)
-                                if(varExists3 == False):
-                                    print(
-                                        f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                else:
-                                    varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor1, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno = varInformation[1]
+                                if("." in valor1):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura1, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura1, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno = informacionInnerVarStruct[1]
                                     if(varTypeInterno != "int"):
                                         print(
                                             f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                else:
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    if(varExists3 == False):
+                                        print(
+                                            f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno = varInformation[1]
+                                        if(varTypeInterno != "int"):
+                                            print(
+                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
                             elif(valor2 == "true" or valor2 == "false"):
                                 print(
                                     f'--> ERROR. La variable "{valor2}" es BOOLEAN pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
@@ -851,41 +1413,105 @@ class decafAlejandroPrinter(decafAlejandroListener):
                             elif(self.functions.checkIfIsInt(valor2) and self.functions.checkIfIsInt(valor1)):
                                 pass
                             else:
-                                # verificamos ambas variables
-                                varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor1, self.scopeActual, False)
-                                varExistsValor2 = self.tablaSimbolos.varExistsRecursivo(
-                                    valor2, self.scopeActual, False)
-                                if(varExistsValor1 == True and varExistsValor2 == False):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExistsValor1 == False and varExistsValor2 == True):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExistsValor1 == False and varExistsValor2 == False):
-                                    print(
-                                        f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    # exit()
-                                elif(varExistsValor1 == True and varExistsValor2 == True):
-                                    varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor1, self.scopeActual, False, [])
-                                    varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        valor2, self.scopeActual, False, [])
-                                    # el tipo de variable
-                                    varTypeInterno1 = varInformation1[1]
-                                    varTypeInterno2 = varInformation2[1]
-                                    if(varTypeInterno1 != "int" or varTypeInterno2 != "int"):
+                                varTypeInterno1 = ""
+                                varTypeInterno2 = ""
+                                if("." in valor1):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura1, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura1, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno1 = informacionInnerVarStruct[1]
+                                    # verificamos la otra variable
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
                                         print(
-                                            f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
-                                    elif(varTypeInterno1 == "int" and varTypeInterno2 == "int"):
-                                        pass
                                     else:
+                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        varTypeInterno2 = varInformation2[1]
+
+                                        if(varTypeInterno1 != "int" or varTypeInterno2 != "int"):
+                                            print(
+                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                        elif(varTypeInterno1 == "int" and varTypeInterno2 == "int"):
+                                            pass
+                                        else:
+                                            print(
+                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                elif("." in valor2):
+                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
+                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableEstructura2, self.scopeActual, False, [])
+                                    # obtenemos la información de la variable DENTRO de la estructura
+                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                        variableDentroEstructura2, informacionStruct[1], False, [])
+                                    # obtenemos el tipo de dato
+                                    varTypeInterno2 = informacionInnerVarStruct[1]
+                                    # verificamos la otra variable
+                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExists3 == False):
                                         print(
-                                            f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo INT "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         # exit()
+                                    else:
+                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        varTypeInterno1 = varInformation1[1]
+                                        if(varTypeInterno1 != "int" or varTypeInterno2 != "int"):
+                                            print(
+                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                        elif(varTypeInterno1 == "int" and varTypeInterno2 == "int"):
+                                            pass
+                                        else:
+                                            print(
+                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                else:
+                                    # verificamos ambas variables
+                                    varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor1, self.scopeActual, False)
+                                    varExistsValor2 = self.tablaSimbolos.varExistsRecursivo(
+                                        valor2, self.scopeActual, False)
+                                    if(varExistsValor1 == True and varExistsValor2 == False):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExistsValor1 == False and varExistsValor2 == True):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExistsValor1 == False and varExistsValor2 == False):
+                                        print(
+                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                        # exit()
+                                    elif(varExistsValor1 == True and varExistsValor2 == True):
+                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor1, self.scopeActual, False, [])
+                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                            valor2, self.scopeActual, False, [])
+                                        # el tipo de variable
+                                        varTypeInterno1 = varInformation1[1]
+                                        varTypeInterno2 = varInformation2[1]
+                                        if(varTypeInterno1 != "int" or varTypeInterno2 != "int"):
+                                            print(
+                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
+                                        elif(varTypeInterno1 == "int" and varTypeInterno2 == "int"):
+                                            pass
+                                        else:
+                                            print(
+                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo INT "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            # exit()
 
                 elif(ctx.assign_op().EQUAL_OP()):  # logica cuando asignamos del lado derecho
                     valorAsignado = ctx.expr().getText()
@@ -983,6 +1609,15 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 variableEstructura = nameVariableV2[0:indice]
                                 variableDentroEstructura = nameVariableV2[indice+1:len(
                                     nameVariableV2)]
+                                # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
+                                if("[" in variableEstructura or "]" in variableEstructura):
+                                    indexCorchete = variableEstructura.index(
+                                        "[")
+                                    variableEstructura = variableEstructura[0: indexCorchete]
+                                if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
+                                    indexCorchete = variableDentroEstructura.index(
+                                        "[")
+                                    variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
                                 # mandamos ambos parametros
                                 structExists = self.tablaSimbolos.varExistsRecursivo(
                                     variableEstructura, self.scopeActual, False)
@@ -1012,21 +1647,39 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                                 print(
                                                     f'--> ERROR. El valor asignado del lado derecho es BOOLEAN y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
                                         else:
-                                            # verificamos la variable o valor
-                                            varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                                valorAsignado, self.scopeActual, False)
-                                            if(varExistsValor1 == False):
-                                                print(
-                                                    f'--> ERROR. La  variable "{valorAsignado}" no ha sido "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            else:
-                                                varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                                    valorAsignado, self.scopeActual, False, [])
-                                                # el tipo de variable
-                                                varTypeInterno1 = varInformation1[1]
+                                            # si lo del lado derecho es una estructura
+                                            if("." in valorAsignado):
+                                                indice = valorAsignado.index(
+                                                    ".")
+                                                variableEstructuraAsignado = valorAsignado[0:indice]
+                                                variableDentroEstructuraAsignado = valorAsignado[indice+1:len(
+                                                    valorAsignado)]
+                                                # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                                                informacionStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
+                                                    variableEstructura, self.scopeActual, False, [])
+                                                informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                                    variableDentroEstructura, informacionStruct2[1], False, [])
+                                                tipoDatoInnerVariable2 = informacionInnerVarStruct[1]
                                                 # si del lado derecho la var no tiene el mismo tipo
-                                                if(varTypeInterno1 != tipoDatoInnerVariable):
+                                                if(tipoDatoInnerVariable2 != tipoDatoInnerVariable):
                                                     print(
                                                         f'--> ERROR. El valor asignado del lado derecho es no tiene el mismo tipo que el izquierdo y no corresponde con el del izquierdo. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                            else:
+                                                # verificamos la variable o valor
+                                                varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
+                                                    valorAsignado, self.scopeActual, False)
+                                                if(varExistsValor1 == False):
+                                                    print(
+                                                        f'--> ERROR. La  variable "{valorAsignado}" no ha sido "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                                else:
+                                                    varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
+                                                        valorAsignado, self.scopeActual, False, [])
+                                                    # el tipo de variable
+                                                    varTypeInterno1 = varInformation1[1]
+                                                    # si del lado derecho la var no tiene el mismo tipo
+                                                    if(varTypeInterno1 != tipoDatoInnerVariable):
+                                                        print(
+                                                            f'--> ERROR. El valor asignado del lado derecho es no tiene el mismo tipo que el izquierdo y no corresponde con el del izquierdo. linea: {ctx.start.line} , columna: {ctx.start.column}')
                                     else:
                                         print(
                                             f'--> ERROR. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
