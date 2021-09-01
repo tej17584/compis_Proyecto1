@@ -35,11 +35,17 @@ void main(void)
 	int k;	
 
 
-	i = j;
+	i = 0;
 	j=0;
-	z.a = 3;
+	z.a = 3;	
 
-	
+	while(i<=10)
+	{
+		y[j].b[0]=InputInt();
+		
+		
+		i = i + 1;
+	}
 }
 
 

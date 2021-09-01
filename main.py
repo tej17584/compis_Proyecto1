@@ -81,6 +81,9 @@ class decafAlejandroPrinter(decafAlejandroListener):
         # agregamos la nueva estructura
         self.tablaSimbolos.AddNewStruct_DictStruct(
             name, tipo, self.scopeAnterior)
+        # agregamos la estructura como nuevo método
+        self.tablaSimbolos.AddNewMethod_DictMethod(
+            "struct", name, [], False, self.scopeAnterior)
 
     def exitStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
         # actualizamos el scope cuando salimso de la funcion
@@ -260,8 +263,44 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 scope = self.scopeActual
                 methodTypeFromTableV2 = self.tablaSimbolos.getTypeMethodDictMethods(
                     metodoAsignado)
-                tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
-                    name, scope)
+                # verificamos si es una estructura
+                if("." in name):  # es una estructura
+                    indice = name.index(".")
+                    variableEstructura = name[0:indice]
+                    variableDentroEstructura = name[indice+1:len(name)]
+                    # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
+                    if("[" in variableEstructura or "]" in variableEstructura):
+                        indexCorchete = variableEstructura.index("[")
+                        variableEstructura = variableEstructura[0: indexCorchete]
+                    if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
+                        indexCorchete = variableDentroEstructura.index("[")
+                        variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
+                    structExists = self.tablaSimbolos.varExistsRecursivo(
+                        variableEstructura, self.scopeActual, False)
+                    if(structExists):  # si la estructura existe
+                        # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
+                        informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                            variableEstructura, self.scopeActual, False, [])
+                        innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
+                            variableDentroEstructura, informacionStruct[1])
+                        if(innerVarExists):
+                            # obtenemos la información de la variable DENTRO de la estructura
+                            informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
+                                variableDentroEstructura, informacionStruct[1], False, [])
+                            # obtenemos el tipo de dato
+                            tipoDatoInnerVariable = informacionInnerVarStruct[1]
+                            tipoGuardado = tipoDatoInnerVariable  # lo asignamos a la variable
+                        else:
+                            print(
+                                f'--> ERROR. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+                    else:  # si no existe
+                        print(
+                            f'--> ERROR. Variable {variableEstructura} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+
+                else:  # es una variable NORMAL
+                    tipoGuardado = self.tablaSimbolos.getTypeVarDictVar(
+                        name, scope)
+
                 if(methodTypeFromTableV2 == "void"):
                     print(
                         f'--> ERROR. Un metodo VOID no puede asignarse a una variable. linea: {ctx.start.line} , columna: {ctx.start.column}')
@@ -1066,15 +1105,35 @@ class decafAlejandroPrinter(decafAlejandroListener):
         if(self.functions.checkIfIsInt(arrayValue)):
             # valor declarado dentro del array
             arrayValue = int(arrayValue)
-            claseError = Errores(name, column, line, "")
-            hasError, errorValue = claseError.checkArrayError(
-                arrayValue, False)
-            if(hasError):
-                print(errorValue)
+            # verificamos si lo que es es una estructura o variable
+            # si no es int verificamos que no sea una variable de una estructura o global
+            varExists = self.tablaSimbolos.varExistsRecursivo(
+                name, self.scopeActual, False)
+            varExistsStruct = False
+            estructuras = self.tablaSimbolos.getDictStruct()
+            for tupla, valorTupla in estructuras.items():
+                varExistsArray2 = self.tablaSimbolos.varExistsRecursivo(
+                    name, valorTupla[0], False)
+                if(varExistsArray2):
+                    varExistsStruct = True
+            if(varExists == True or varExistsStruct == True):
+                pass
+            elif(varExists == False or varExistsStruct == False):
+                claseError = Errores(name, column, line, "")
+                hasError, errorValue = claseError.checkArrayError(
+                    arrayValue, False)
+                if(hasError):
+                    print(errorValue)
                 # exit()
         elif(self.functions.checkIfIsInt(arrayValue) == False):
-            print(
-                f'-->  ERROR . El valor DENTRO de un corchete de array debe ser INT. La variable o valor "{arrayValue}" no lo es. Linea: {line} columna: {column} ')
+            # si no es int verificamos que no sea una variable
+            varExistsArray = self.tablaSimbolos.varExistsRecursivo(
+                arrayValue, self.scopeActual, False)
+            if(varExistsArray):
+                pass
+            else:
+                print(
+                    f'-->  ERROR . El valor DENTRO de un corchete de array debe ser INT. La variable o valor "{arrayValue}" no lo es o no. Linea: {line} columna: {column} ')
             # exit()
         else:
             varExists = self.tablaSimbolos.checkStructInStructSymbolTableV2(
