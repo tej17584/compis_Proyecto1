@@ -19,7 +19,7 @@ struct A z;
 int factorial(int n)
 {
 	if (n==0)
-	{return true;}
+	{return 1;}
 	else
 	{return  n*factorial(n-1);}
 }
@@ -46,7 +46,6 @@ void main(void)
 	i = 0;
 	j=0;
 	z.a = 3;	
-
 	while(i<=10)
 	{
 		y[j].b[0]=InputInt();
@@ -62,8 +61,8 @@ void main(void)
 		OutputInt(y[j].c.a);
 		i = i + 1;
 	}
+	
 }
-
 
 
 

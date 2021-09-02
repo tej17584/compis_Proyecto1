@@ -17,6 +17,7 @@ from antlr4.tree.Trees import TerminalNode
 from funciones import *
 from ErrorClass import *
 from symbolTable import *
+import emoji
 import sys
 from pprint import pprint
 
@@ -1910,8 +1911,8 @@ while not salir:
     """
     print("")
     print("------------------------> MENU <-----------------------")
-    pprint("1. Opcion 1: cargar archivo de pruebas y ejecutar")
-    pprint("2. Opcion 2: SALIR")
+    pprint(emoji.emojize( "1."+ ":winking_face_with_tongue:") + " Opcion 1: cargar archivo de pruebas y ejecutar")
+    pprint("2."+"\U0001F923 "+"Opcion 2: SALIR")
 
     pprint("Elige una opcion")
 
@@ -1925,4 +1926,5 @@ while not salir:
     else:
         print("Introduce un numero entre 1 y 2")
 
+print("\U0001F923")
 print("Fin. ADIOS")
