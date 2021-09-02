@@ -96,6 +96,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
         # miramos si tiene return
         returnValue = ""
         returnExpresion = ""
+        returnExpresionIF = ""
         try:
             # el nombre de la variable
             returnValue = ctx.block().statement()[0].expr().getText()
@@ -138,6 +139,19 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     print(
                         f'--> Error_varDeclaration, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
                     # exit()
+            # el valor de return
+            returnExpresionIF = ctx.block().statement()
+            lenReturnExpresionIF = len(ctx.block().statement())
+            for x in range(0, lenReturnExpresionIF):
+                # obtenemos el obtjeto
+                valorInterno = returnExpresionIF[x].block()
+                for y in range(0, len(valorInterno)):
+                    valorReturn = valorInterno[y].statement()[
+                        0].getText()
+                    if(valorReturn != "" or valorReturn != None):
+                        if("return" in valorReturn):
+                            returnExpresion = "return"
+
                 # print("parametros", parametros[x].getText())
             if(returnExpresion == "return" and returnValue != ""):
                 methodReturnsThings = True
@@ -170,8 +184,12 @@ class decafAlejandroPrinter(decafAlejandroListener):
         # si tiene valor de retorno
         if(hasReturnValue):
             # verificamos si deberia poder retornar algo
-            methodTypeFromTable = self.tablaSimbolos.getTypeMethodDictMethods(
-                self.scopeActual)
+            if("if" in self.scopeActual or "while" in self.scopeActual):
+                methodTypeFromTable = self.tablaSimbolos.getTypeMethodDictMethods(
+                    self.scopeAnterior)
+            else:
+                methodTypeFromTable = self.tablaSimbolos.getTypeMethodDictMethods(
+                    self.scopeActual)
             if(methodTypeFromTable == "void"):
                 print(
                     f'--> ERROR. Un método tipo VOID no puede devolver algo. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
@@ -228,29 +246,56 @@ class decafAlejandroPrinter(decafAlejandroListener):
                                 f'--> ERROR. Variable {variableEstructura} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                     # exit()
                     else:
-                        for i in range(len(value)):
-                            varExistsReturn = self.tablaSimbolos.varExistsRecursivo(
-                                value[i], self.scopeActual, False)
-                            if(varExistsReturn == False):
+                        scope = self.scopeActual
+                        if("+" in value or "-" in value or "/" in value or "*" in value or "%" in value):
+                            splitHijos = self.functions.removeOperations(value)
+                            for x in splitHijos:
+                                # o variable, o numero u operador
+                                hijo = x
+                                if(hijo != ""):
+                                    if(self.functions.checkIfIsInt(hijo) == False):
+                                        # si no es int verificamos que NO sea variable
+                                        varExists = self.tablaSimbolos.varExistsRecursivo(
+                                            hijo, scope, False)
+                                        if(varExists):
+                                            informationHijo = self.tablaSimbolos.getVarInformationRecursivo(
+                                                hijo, scope, False, [])
+                                            if(informationHijo[1] != "int"):
+                                                print(
+                                                    f'--> ERROR_RETURN. La variable o valor "{hijo}" NO es del tipo INT. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                                                # exit()
+                                        else:
+                                            # si no es var, miramos si no es método en el return
+                                            # obtenemos el tipo de método
+                                            tipoMetodo = self.tablaSimbolos.getTypeMethodDictMethods(
+                                                hijo)
+                                            if(tipoMetodo != "int"):
+                                                print(
+                                                    f'--> ERROR_RETURN. La variable o método "{hijo}" NO es del tipo INT y se intenta usar en una operación aritimética de return. linea: {ctx.start.line} , columna: {ctx.start.column}')
+                        else:
+                            for i in range(len(value)):
+                                varExistsReturn = self.tablaSimbolos.varExistsRecursivo(
+                                    value[i], self.scopeActual, False)
+                                if(varExistsReturn == False):
+                                    print(
+                                        f'--> ERROR. La variable retornada NO existe  "{self.scopeActual}", linea: {ctx.start.line}')
+                                    # exit()
+                                varinformation = self.tablaSimbolos.getVarInformationRecursivo(
+                                    value[i], self.scopeActual, False, [])
+                                if isinstance(varinformation[1], str) and len(varinformation[1]) > 0:
+                                    arrayVars.append(varinformation[1])
+                                if not len(set(arrayVars)) <= 1:
+                                    print(
+                                        f'--> ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
+                                    # exit()
+                            e = ""
+                            if(len(arrayVars) > 0):
+                                e = next(iter(arrayVars))
+                            # obtenemos el tipo de método
+                            if(methodTypeFromTable != e):
                                 print(
-                                    f'--> ERROR. La variable retornada NO existe  "{self.scopeActual}", linea: {ctx.start.line}')
+                                    f'--> ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
                                 # exit()
-                            varinformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                value[i], self.scopeActual, False, [])
-                            if isinstance(varinformation[1], str) and len(varinformation[1]) > 0:
-                                arrayVars.append(varinformation[1])
-                            if not len(set(arrayVars)) <= 1:
-                                print(
-                                    f'--> ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
-                                # exit()
-                        e = ""
-                        if(len(arrayVars) > 0):
-                            e = next(iter(arrayVars))
-                        # obtenemos el tipo de método
-                        if(methodTypeFromTable != e):
-                            print(
-                                f'--> ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                            # exit()
 
         else:
             methodCallAsignacion = ""
