@@ -18,6 +18,7 @@ from funciones import *
 from ErrorClass import *
 from symbolTable import *
 import sys
+from pprint import pprint
 
 
 class MyErrorListener(ErrorListener):
@@ -46,15 +47,27 @@ class decafAlejandroPrinter(decafAlejandroListener):
     def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
         return super().enterStatement(ctx)
 
+    def enterProgram(self, ctx: decafAlejandroParser.ProgramContext):
+        pprint("--------------------COMENZANDO REVISIÓN DE PROGRAMA--------------")
+        pprint(" -----> LOS ERRORES APARECEERÁN ABAJO")
+        pprint("")
+
     def exitProgram(self, ctx: decafAlejandroParser.ProgramContext):
+        pprint(
+            "------------------FINALIZADA REVISIÓN DE PROGRAMA------------------------")
+        pprint("LOS DICCIONARIOS O TABLAS FINALES SON: ")
+        pprint("")
+        pprint("----------------------TABLA DE VARIABLES---------------------")
         diccionarioVarsFinal = self.tablaSimbolos.getDictVar()
-        print(diccionarioVarsFinal)
-        print("///////////////////////////////")
+        pprint(diccionarioVarsFinal)
+        pprint("")
+        pprint("----------------------TABLA DE METODOS---------------------")
         diccionarioMethodsFinal = self.tablaSimbolos.getDictMethod()
-        print(diccionarioMethodsFinal)
-        print("++++++++++++++++++++++++++++++++")
+        pprint(diccionarioMethodsFinal)
+        pprint("")
+        pprint("----------------------TABLA DE ESTRUCTURAS---------------------")
         diccionarioStructsFinal = self.tablaSimbolos.getDictStruct()
-        print(diccionarioStructsFinal)
+        pprint(diccionarioStructsFinal)
         # ! verificamos la logica de la definicion de main sin parametros
         mainMethodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
             "main")
@@ -1842,11 +1855,20 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 # exit()
 
 
-def main():
-    # hacemos el open de la data del archivo de prueba
-    data = open('Python3/programs/simple.decaf').read()
-    # invocamos al lexer
-    lexer = decafAlejandroLexer(InputStream(data))
+def main(nombreFile=""):
+    """
+    método main principal
+    """
+    streamNameFile = 'Python3/programs/' + nombreFile
+    data = ""
+    lexer = ""
+    try:
+        data = open(streamNameFile).read()
+        # hacemos el open de la data del archivo de prueba
+        # invocamos al lexer
+        lexer = decafAlejandroLexer(InputStream(data))
+    except:
+        print('Error, introduce UN NOMBRE DE ARCHIVO VALIDO')
     # jalamos el stream
     stream = CommonTokenStream(lexer)
     # invocamos al parser
@@ -1863,4 +1885,44 @@ def main():
     walker.walk(printer, tree)
 
 
-main()
+def pedirNumeroEntero():
+    """
+        Pide un numero en consola y retorna el numero
+    """
+    correcto = False
+    num = 0
+    while(not correcto):
+        try:
+            num = int(input("Introduce un numero entero: "))
+            correcto = True
+        except ValueError:
+            print('Error, introduce un numero entero')
+
+    return num
+
+
+salir = False
+opcion = 0
+
+while not salir:
+    """
+    Menú principal
+    """
+    print("")
+    print("------------------------> MENU <-----------------------")
+    pprint("1. Opcion 1: cargar archivo de pruebas y ejecutar")
+    pprint("2. Opcion 2: SALIR")
+
+    pprint("Elige una opcion")
+
+    opcion = pedirNumeroEntero()
+
+    if opcion == 1:
+        nombreFile = str(input("Introduce el nombre del .decaf : "))
+        main(nombreFile)
+    elif opcion == 2:
+        salir = True
+    else:
+        print("Introduce un numero entre 1 y 2")
+
+print("Fin. ADIOS")
