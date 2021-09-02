@@ -18,7 +18,10 @@ struct A z;
 
 int factorial(int n)
 {
-	return 1;
+	if (n==0)
+	{return 1;}
+	else
+	{return  n*factorial(n-1);}
 }
 
 void OutputInt(int n)
@@ -42,24 +45,25 @@ void main(void)
 
 	i = 0;
 	j=0;
-	z.a = 3;
-	boolean s;	
+	z.a = 3;	
 
 	while(i<=10)
 	{
 		y[j].b[0]=InputInt();
+		
 		if(y[j].b[0]==5)
 		{
 			y[j].b[0]=z.a;
 			k=factorial(ReturnNumber());
-			i = i +1
-		}
+			OutputInt(k);
+		}		
+
 		y[j].c.a=factorial(y[j].b[0]);
 		OutputInt(y[j].c.a);
-		
-		i = true + z.a;
+		i = i + 1;
 	}
 }
+
 
 
 

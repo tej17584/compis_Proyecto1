@@ -173,9 +173,9 @@ class funciones():
         if("%" in operacionPlana):
             operacionPlana = operacionPlana.replace("%", " ")
         if("(" in operacionPlana):
-            operacionPlana = operacionPlana.replace("(", "")
+            operacionPlana = operacionPlana.replace("(", " ")
         if(")" in operacionPlana):
-            operacionPlana = operacionPlana.replace(")", "")
+            operacionPlana = operacionPlana.replace(")", " ")
 
         # ahora retornamos el nuevo array
         nuevoArray = operacionPlana.split(" ")
