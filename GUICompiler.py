@@ -222,8 +222,8 @@ class MainWindow(QMainWindow):
 
     def update_title(self):
 
-        self.setWindowTitle("%s - PyQt5 Notepad" % (os.path.basename(self.path)
-                                                    if self.path else "Untitled"))
+        self.setWindowTitle("%s - Compiladores 2021 Alejandro Tejada" % (os.path.basename(self.path)
+                                                                         if self.path else "Untitled"))
 
     def edit_toggle_wrap(self):
 
