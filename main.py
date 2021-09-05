@@ -27,9 +27,9 @@ class MyErrorListener(ErrorListener):
         super(MyErrorListener, self).__init__()
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        print(str(line) + ":" + str(column) + ": sintaxis ERROR encontrado, " +
-              str(msg))
-        sys.exit()
+        f = open("errores.txt", "w", encoding="utf8")
+        f.write(str(line) + ":" + str(column) + ": sintaxis ERROR encontrado, " +
+                str(msg))
 
 
 class decafAlejandroPrinter(decafAlejandroListener):
