@@ -1856,7 +1856,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                 # exit()
 
 
-def main(nombreFile=""):
+def main(nombreFile="simple.decaf"):
     """
     método main principal
     """
@@ -1886,10 +1886,11 @@ def main(nombreFile=""):
     walker.walk(printer, tree)
 
 
+main()
+
+""" 
 def pedirNumeroEntero():
-    """
-        Pide un numero en consola y retorna el numero
-    """
+    
     correcto = False
     num = 0
     while(not correcto):
@@ -1906,9 +1907,7 @@ salir = False
 opcion = 0
 
 while not salir:
-    """
-    Menú principal
-    """
+    
     print("")
     print("------------------------> MENU <-----------------------")
     pprint(emoji.emojize( "1."+ ":winking_face_with_tongue:") + " Opcion 1: cargar archivo de pruebas y ejecutar")
@@ -1927,4 +1926,4 @@ while not salir:
         print("Introduce un numero entre 1 y 2")
 
 print("\U0001F923")
-print("Fin. ADIOS")
+print("Fin. ADIOS") """
