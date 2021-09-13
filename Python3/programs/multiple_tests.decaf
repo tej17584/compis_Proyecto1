@@ -4,7 +4,7 @@ class Program {
 	{
 		int a;
 	};
-	
+
 	struct B
 	{
 		int b[2];
@@ -41,18 +41,18 @@ class Program {
 
 		i = 0;
 		j=0;
-		z.a = 3;	
+		z.a = 3;
 
 		while(i<=10)
 		{
-			
+
 			y[i].b[10] = InputInt();
 			if(y[j].b[0]==5)
 			{
 				y[j].b[0]=z.a;
 				k=factorial(ReturnNumber());
 				OutputInt(k);
-			}		
+			}
 
 			y[j].c.a=factorial(y[j].b[0]);
 			OutputInt(y[j].c.a);
