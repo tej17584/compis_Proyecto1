@@ -20,6 +20,7 @@ from symbolTable import *
 import emoji
 import sys
 from pprint import pprint
+from itertools import groupby
 from symbolTableV2 import *
 
 
@@ -1095,4 +1096,4 @@ class Compilar():
         return self.myError.getHasError()
 
 
-comp = Compilar('./Python3/programs/multiple_tests.decaf')
+comp = Compilar('Python3/programs/multiple_tests.decaf')
