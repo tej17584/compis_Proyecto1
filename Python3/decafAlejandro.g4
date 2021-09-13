@@ -6,221 +6,197 @@ grammar decafAlejandro;
 
 // Keyword specification
 
-CLASS: 'class';
+CLASS               : 'class';
 
-PROGRAM: 'Program';
+PROGRAM             : 'Program';
 
-IF: 'if';
+IF                  : 'if';
 
-ELSE: 'else';
+ELSE                : 'else';
 
-FOR: 'for';
+FOR                 : 'for';
 
-WHILE: 'while';
+WHILE               : 'while';
 
-RETURN: 'return';
+RETURN              : 'return';
 
-BREAK: 'break';
+BREAK               : 'break';
 
-CONTINUE: 'continue';
+CONTINUE            : 'continue';
 
-BOOLEAN: 'boolean';
+BOOLEAN             : 'boolean';
 
-CHAR: 'char';
+CHAR                : 'char';
 
-INT: 'int';
+INT                 : 'int';
 
-STRING: 'string';
+TRUE                : 'True';
 
-TRUE: 'True';
+FALSE               : 'False';
 
-FALSE: 'False';
+VOID                : 'void';
 
-VOID: 'void';
+STRUCT              : 'struct';
 
-STRUCT: 'struct';
-
-CALLOUT: 'callout';
+CALLOUT             : 'callout';
 
 // Symbol Specification
-SEMICOLON: ';';
+SEMICOLON           : ';';
 
-LCURLY: '{';
+LCURLY              : '{';
 
-RCURLY: '}';
+RCURLY              : '}';
 
-LSQUARE: '[';
+LSQUARE             : '[';
 
-RSQUARE: ']';
+RSQUARE             : ']';
 
-LROUND: '(';
+LROUND              : '(';
 
-RROUND: ')';
+RROUND              : ')';
 
-COMMA: ',';
+COMMA               : ',';
 
-QUOTES: '"';
+QUOTES              : '"';
 
-APOSTROPHE: '\'';
+APOSTROPHE          : '\'';
 
-ADD: '+';
+ADD                 : '+';
 
-SUB: '-';
+SUB                 : '-';
 
-MULTIPLY: '*';
+MULTIPLY            : '*';
 
-DIVIDE: '/';
+DIVIDE              : '/';
 
-REMINDER: '%';
+REMINDER            : '%';
 
-AND: '&&';
+AND                 : '&&';
 
-OR: '||';
+OR                  : '||';
 
-NOT: '!';
+NOT                 : '!';
 
-GREATER_OP: '>';
+GREATER_OP          : '>';
 
-LESS_OP: '<';
+LESS_OP             : '<';
 
-GREATER_eq_op: '>=';
+GREATER_eq_op       : '>=';
 
-LESS_eq_op: '<=';
+LESS_eq_op          : '<=';
 
-EQUAL_OP: '=';
+EQUAL_OP            : '=';
 
-ADD_eq_op: '+=';
+ADD_eq_op           : '+=';
 
-SUB_eq_op: '-=';
+SUB_eq_op           : '-=';
 
-EQUALITY_OP: '==';
+EQUALITY_OP         : '==';
 
-UNEQUALITY_OP: '!=';
+UNEQUALITY_OP       : '!=';
 
-POINT: '.';
+POINT               : '.';
+
 
 // Variable names & literal specification
 
-ID: ALPHA ALPHA_NUM*; // for variable name
+ID                  : ALPHA ALPHA_NUM*; // for variable name
 
-ALPHA: [a-zA-Z_];
+ALPHA               : [a-zA-Z_];
 
-CHAR_LITERAL:
-	APOSTROPHE ('\\' [btnfr"'\\] | ~[\r\n\\"])* APOSTROPHE;
+DECIMAL_LITERAL     : [0-9]+;
 
-DECIMAL_LITERAL: [0-9]+;
+DIGIT               : [0-9];
 
-DIGIT: [0-9];
+//BOOL_LITERAL        : 'True' | 'False';
 
-HEX_LITERAL: '0' [xX][0-9a-fA-F]+;
+STRING_LITERAL      : ('"' ( ALPHA_NUM ) '"') | (APOSTROPHE ( ALPHA_NUM ) APOSTROPHE);
 
-BOOL_LITERAL: TRUE | FALSE;
+ALPHA_NUM           : ALPHA | DIGIT;
 
-STRING_LITERAL: '"' ( '\\' [btnfr"'\\] | ~[\r\n\\"])* '"';
+HEX_DIGIT  : '0'[xX]([0-9] | [a-fA-F]);
 
-ALPHA_NUM: ALPHA | DIGIT;
+LINE_COMMENT        : '//' .*? '\n' -> skip; // skip single line comments starting from // and ending with new line
 
-HEX_DIGIT: '0' [xX]([0-9] | [a-fA-F]);
-
-LINE_COMMENT:
-	'//' .*? '\n' -> skip; // skip single line comments starting from // and ending with new line
-
-COMMENT: '/*' .*? '*/' -> skip; // skip mutliple comments
+COMMENT             : '/*' .*? '*/' -> skip; // skip mutliple comments
 
 //SPACE               : ' ' -> skip; // ignore spaces
 
-NEWLINE: ('\r'? '\n' | '\r')+ -> skip;
+NEWLINE				: ('\r'? '\n' | '\r')+ -> skip;
+
 
 /*
  * Parser Rules
  */
 
-program: CLASS PROGRAM LCURLY (declaration)* RCURLY;
+program		        : CLASS PROGRAM LCURLY (declaration)* RCURLY;
 
-declaration:
-	struct_declr
-	| vardeclr
-	| method_declr
-	| field_declr;
+declaration         : struct_declr | vardeclr | method_declr | field_declr ;
 
-vardeclr: (var_type field_var) (COMMA var_type field_var)* SEMICOLON;
+vardeclr            : var_type field_var SEMICOLON;
 
-field_declr: var_type field_var (COMMA field_var)* SEMICOLON;
+field_declr         : var_type field_var (COMMA field_var)* SEMICOLON;
 
-array_id: ID LSQUARE expr RSQUARE (POINT location)?;
+array_id            : ID LSQUARE (int_literal | var_id) RSQUARE (POINT location)?;
 
-field_var: var_id | array_id;
+field_var           : var_id | array_id;
 
-var_id: ID (POINT location)?;
+var_id              : ID (POINT location)?;
 
-struct_declr: STRUCT ID LCURLY (vardeclr)* RCURLY SEMICOLON;
+struct_declr        : STRUCT ID LCURLY (vardeclr)* RCURLY SEMICOLON;
 
-method_declr:
-	return_type method_name LROUND (
-		((var_type var_id) | VOID) (COMMA var_type var_id)*
-	)? RROUND block;
+method_declr        : return_type method_name LROUND (((var_type var_id) | VOID) (COMMA var_type var_id)*)? RROUND block;
 
-return_type: (var_type | VOID);
+return_type         : (var_type | VOID);
 
-block: LCURLY vardeclr* statement* RCURLY;
+block               : LCURLY (vardeclr)* statement* RCURLY;
 
-statement:
-	location assign_op expr
-	| location assign_op expr SEMICOLON
-	| method_call
-	| IF LROUND expr RROUND block (ELSE block)?
-	| WHILE LROUND expr RROUND block
-	| location EQUAL_OP expr SEMICOLON
-	| RETURN expr SEMICOLON
-	| FOR var_id (EQUAL_OP int_literal)? COMMA (
-		(var_id (EQUAL_OP int_literal)?)
-		| int_literal
-	) block
-	| BREAK SEMICOLON;
+statement           : location assign_op expr SEMICOLON? #statement_assign
+                    | method_call #statement_methodcall
+                    | IF LROUND expr RROUND block (ELSE block)? #statement_if
+                    | WHILE LROUND expr RROUND block #statement_while
+                    | RETURN expr SEMICOLON #statement_return
+                    | FOR var_id (EQUAL_OP int_literal)? COMMA ((var_id (EQUAL_OP int_literal)?) | int_literal) block #statement_for
+                    | BREAK SEMICOLON #statement_break
+                    ; 
 
-// intermediate rule for method call
-method_call_inter:
-	method_name LROUND (expr (COMMA expr)*)? RROUND;
+method_call         : method_name LROUND (expr (COMMA expr)*)? RROUND (SEMICOLON)?;
 
-method_call:
-	method_call_inter
-	| method_call_inter SEMICOLON
-	| CALLOUT LROUND STRING_LITERAL (
-		COMMA callout_arg (COMMA callout_arg)*
-	)? RROUND SEMICOLON;
+expr                : literal
+                    | location
+                    | expr (arith_op | rel_op | eq_op | cond_op) expr
+                    | SUB expr
+                    | method_call
+                    | NOT expr
+                    | LROUND expr RROUND
+                    ;
 
-expr:
-	location
-	| literal
-	| expr bin_op expr
-	| SUB expr
-	| method_call
-	| NOT expr
-	| LROUND expr RROUND;
 
-location: var_id | array_id;
+location            : var_id | array_id;
 
-callout_arg: expr | STRING_LITERAL;
+int_literal         : DECIMAL_LITERAL;
 
-int_literal: DECIMAL_LITERAL | HEX_LITERAL;
+string_literal      : STRING_LITERAL;
 
-rel_op: GREATER_OP | LESS_OP | LESS_eq_op | GREATER_eq_op;
+bool_literal        : 'True' | 'False';
 
-eq_op: EQUALITY_OP | UNEQUALITY_OP;
+rel_op              : GREATER_OP | LESS_OP | LESS_eq_op | GREATER_eq_op;
 
-cond_op: AND | OR;
+eq_op               : EQUALITY_OP | UNEQUALITY_OP;
 
-literal: int_literal | CHAR_LITERAL | BOOL_LITERAL;
+cond_op             : AND | OR;
 
-bin_op: arith_op | rel_op | eq_op | cond_op;
+literal             : int_literal | string_literal | bool_literal;
 
-arith_op: ADD | SUB | MULTIPLY | DIVIDE | REMINDER;
+arith_op            : ADD | SUB | MULTIPLY | DIVIDE | REMINDER;
 
-var_type: INT | BOOLEAN | STRING | STRUCT ID | struct_declr;
+var_type            : INT | CHAR | BOOLEAN | STRUCT ID | struct_declr ;
 
-assign_op: EQUAL_OP | ADD_eq_op | SUB_eq_op;
+assign_op           : EQUAL_OP
+                    | ADD_eq_op
+                    | SUB_eq_op;
 
-method_name: ID;
+method_name         : ID;
 
 // recognize the whitespace at the end to prevent string concatenation due to elemination of all sapces
-WHITESPACE: [ \t\r\n] -> skip;
+WHITESPACE			: [ \t\r\n] -> skip ;
