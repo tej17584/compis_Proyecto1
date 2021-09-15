@@ -38,11 +38,12 @@ class Program {
 		int i;
 		int j;
 		int k;
-		char patito;
+		boolean patito;
 
 		i = 0;
 		j=0;
 		z.a = 3;
+		patito = True;
 
 		while(i<=10)
 		{

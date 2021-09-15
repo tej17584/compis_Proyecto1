@@ -58,7 +58,10 @@ class generalSymbolTable():
         """
         return sum(symbol['Size'] for symbol in self.dictSimbolos)
 
-    def arrayToTable(self):
+    def valueToTable(self):
+        """
+        transforma un array o valor a tabla
+        """
         self.pretty_table.field_names = [
             'Tipo', 'ID', 'Size', 'Offset', 'IsParameter']
         for i in self.dictSimbolos:
@@ -71,11 +74,19 @@ class generalSymbolTable():
 
 class tableDictParameters():
     def __init__(self):
+        """
+        Init de la tabla de parámetros
+        """
         self.pretty_table = PrettyTable()
         self.dictSimbolos = []
         print(' -- INICIANDO NUEVO AMBITO --')
 
     def AddEntryToTable(self, typeValue, idValue):
+        """
+        Agregamos una entrada a la tabla de parámetros
+        *@param: typeValue: el tipo de valor
+        *@param: idValue: el id del valor
+        """
         self.dictSimbolos.append({
             'Tipo': typeValue,
             'Id': idValue,
@@ -93,7 +104,10 @@ class tableDictParameters():
                 return symbol
         return 0
 
-    def arrayToTable(self):
+    def valueToTable(self):
+        """
+        transforma un array o valor a tabla
+        """
         self.pretty_table.field_names = ['Tipo', 'ID']
         for i in self.dictSimbolos:
             self.pretty_table.add_row(list(i.values()))
@@ -102,17 +116,30 @@ class tableDictParameters():
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
-    def Clear(self):
-        self.arrayToTable()
+    def cleanTable(self):
+        """
+        limpia una tabla, en este caso el dict de simbolos
+        """
+        self.valueToTable()
         self.dictSimbolos = []
 
 
 class dictTableStruct():
     def __init__(self):
+        """
+        init d ela tabla de estructuras
+        """
         self.pretty_table = PrettyTable()
         self.dictSimbolos = []
 
     def AddEntryToTable(self, parent, typeValue, idValue, description):
+        """
+        Agrega un nuevo valor de estructura
+        *@param: parent: el padre de la struct
+        *@param: typeValue: el tipo
+        *@param: idValue: el id del valor
+        *@param: description: la descripcion o valor
+        """
         self.dictSimbolos.append({
             'Parent': parent,
             'Tipo': typeValue,
@@ -132,7 +159,10 @@ class dictTableStruct():
                 return symbol
         return 0
 
-    def arrayToTable(self):
+    def valueToTable(self):
+        """
+        transforma un array o valor a tabla
+        """
         self.pretty_table.field_names = ['Parent', 'Tipo', 'ID', 'Description']
         for i in self.dictSimbolos:
             self.pretty_table.add_row(list(i.values()))
@@ -142,12 +172,23 @@ class dictTableStruct():
         self.pretty_table.clear_rows()
 
     def ExtractInfo(self, parent, scope, tabla_tipo):
+        """
+        Retorna el valor de informacion de la estructura y lo guarda en la tabla
+        *@param: parent: el padre
+        *@param: scope: el scope o lugar
+        *@param: tabla_tipo: el tipo de tabla
+        """
         for i in scope.dictSimbolos:
             typeValue = tabla_tipo.getSymbolFromTable(i['Tipo'])
             self.AddEntryToTable(
                 parent, i['Tipo'], i['Id'], typeValue['Description'])
 
-    def GetChild(self, typeValue, name):
+    def getChild(self, typeValue, name):
+        """
+        retorna el hijo
+        *@param: typeValue:el tipo de valor
+        *@param: scnameope: eel nombre
+        """
         copy_symbols = self.dictSimbolos.copy()
         copy_symbols.reverse()
         for symbol in copy_symbols:
@@ -159,12 +200,22 @@ class dictTableStruct():
 
 class dictTableMetods():
     def __init__(self):
+        """
+        init de la tabla de métodos
+        """
         self.pretty_table = PrettyTable()
-        self._methods = []
+        self.arrayMetodos = []
         print(' -- INICIANDO NUEVO AMBITO --')
 
     def AddEntryToTable(self, typeValue, idValue, parameters, returnVariable):
-        self._methods.append({
+        """
+        agrega un valor a la tabla
+        *@param: typeValue: el tipo de método
+        *@param: idValue: el ID
+        *@param: parameters: los parametros si posee
+        *@param: returnVariable: la variable de retorno si tiene
+        """
+        self.arrayMetodos.append({
             'Tipo': typeValue,
             'Id': idValue,
             'Parameters': parameters,
@@ -176,15 +227,18 @@ class dictTableMetods():
         Retorna el valor pasado
         *@param: variable: el id del valor
         """
-        for method in self._methods:
-            if method['Id'] == variable:
-                return method
+        for metodo in self.arrayMetodos:
+            if metodo['Id'] == variable:
+                return metodo
 
         return 0
 
-    def arrayToTable(self):
+    def valueToTable(self):
+        """
+        transforma un array o valor a tabla
+        """
         self.pretty_table.field_names = ['Tipo', 'ID', 'Parameters', 'Return']
-        for i in self._methods:
+        for i in self.arrayMetodos:
             self.pretty_table.add_row(list(i.values()))
 
         print(' ** METODOS **')
@@ -194,11 +248,15 @@ class dictTableMetods():
 
 class dictTableVars():
     def __init__(self):
-        self.PRIMITIVE = 'primitive'
+        """
+        Init de la tabla de variables
+        """
+        # enumerador de valores
         self.ARRAY = 'array'
         self.STRUCT = 'struct'
-
-        self._types = []
+        self.PRIMITIVE = 'primitive'
+        self.typesArray = []
+        # agregamos esos valores a la tabla de entradas con el size de cada una
         self.AddEntryToTable('int', 4, self.PRIMITIVE)
         self.AddEntryToTable('char', 2, self.PRIMITIVE)
         self.AddEntryToTable('boolean', 1, self.PRIMITIVE)
@@ -206,7 +264,13 @@ class dictTableVars():
         print(' -- INICIANDO TABLA TIPOS --')
 
     def AddEntryToTable(self, typeValue, size, description):
-        self._types.append({
+        """
+        Retorna el valor pasado
+        *@param: typeValue: el tipo
+        *@param: size: el tamaño de la var
+        *@param: description: la descripcion de la variable
+        """
+        self.typesArray.append({
             'Tipo': typeValue,
             'Size': size,
             'Description': description
@@ -217,7 +281,7 @@ class dictTableVars():
         Retorna el valor pasado
         *@param: variable: el id del valor
         """
-        types_copy = self._types.copy()
+        types_copy = self.typesArray.copy()
         types_copy.reverse()
         for type in types_copy:
             if type['Tipo'] == typeValue:

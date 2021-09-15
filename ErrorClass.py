@@ -48,3 +48,4 @@ class Errores():
         REtorna todos los errores
         """
         return self.arrayErrores
+
