@@ -281,9 +281,9 @@ class dictTableVars():
         Retorna el valor pasado
         *@param: variable: el id del valor
         """
-        types_copy = self.typesArray.copy()
-        types_copy.reverse()
-        for type in types_copy:
+        innerArray = self.typesArray.copy()
+        innerArray.reverse()
+        for type in innerArray:
             if type['Tipo'] == typeValue:
                 return type
         return 0

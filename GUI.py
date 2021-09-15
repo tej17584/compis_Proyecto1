@@ -305,7 +305,7 @@ class MainWindow(QMainWindow):
             else:
                 if programaCompilado.printer.node_type[programaCompilado.printer.root] == 'error' or len(programaCompilado.printer.errores.errores) > 0:
                     errores = '\n'.join(
-                        programaCompilado.printer.errores.GetErrores())
+                        programaCompilado.printer.errores.getAllErrors())
                     self.errorForLog.setText(errores)
                 else:
                     self.errorForLog.setText(

@@ -53,38 +53,42 @@ class Errores():
 class SemanticError():
     def __init__(self):
         self.errores = []
-        self.IDENTIFICADOR_DECLARADO_MUCHAS_VECES = 'Identificador no puede estar declarado más de una vez en el mismo ámbito.'
-        self.MAIN_PARAMETERLESS = 'No existe un método llamado main sin parámetros.'
-        self.NUMERO_PARAMETROS_METODO = 'El número de argumentos en la llamada al método no coincide.'
-        self.TIPO_PARAMETROS_METODO = 'El typeValue de dato en los argumentos en la llamada al método no coincide.'
-        self.EQ_OPS = 'El typeValue de dato de operandos no es el mismo para los operadores "==" y "!=".'
-        self.ARITH_OP = 'El typeValue de dato de operando debe ser INT para operadores aritméticos.'
-        self.REL_OP = 'El typeValue de dato de operando debe ser INT para operadores de relación.'
-        self.COND_OP = 'El typeValue de dato en operación condicional debe ser boolean.'
-        self.IF_BOOLEAN = 'El typeValue de dato dentro de condición de IF debe ser boolean.'
-        self.WHILE_BOOLEAN = 'El typeValue de dato dentro de condición de WHILE debe ser boolean.'
-        self.ASIGNACION = 'La asignación de dos valores deben ser del mismo typeValue.'
-        self.RETURN_TYPE = 'El valor de retorno debe de ser del mismo typeValue con que fue declarado el método.'
-        self.RETURN_VOID = 'Un método declarado VOID no puede retornar ningún valor.'
-        self.MUST_STRUCT = 'El typeValue de dato de la variable debe ser STRUCT.'
-        self.METHOD_NOT_DECLARED = 'El método no existe o no hay definición del método previamente a ser invocado.'
-        self.SHADOW_PARAMETER = 'No es posible declarar una variable con el nombre de un parámetro.'
+        self.errrorText_VARDUPLICADA = 'No se puede tener un identificador declarado DOS veces en el mismo SCOPE.'
+        self.errrorText_MAIN_NOT_EXHISTS = 'No existe la definicion de un método MAIN sin PARAMETROS'
+        self.errrorText_CANTIDAD_PARAMETROS = 'El número dado de argumentos en la llamada al método es la correcta'
+        self.errrorText_TIPOMETODOS = 'No coincide el tipo de dato en los PARAMETROS del método dado. '
+        self.errrorText_EQ_OPS = 'El tipo de dato de los operandos dados no es el mismo para sus valores. ( == != ) .'
+        self.errrorText_ARITMETICA = 'El tipo de dato de operando debe ser INT para operaciones ARITMETICAS.'
+        self.errrorText_REL_OP = 'El tipo de dato de un operando debe ser INT para REL_OPS.'
+        self.errrorText_CONDICIONALES_GENERAL = 'En condiciones, el tipo de dato debe ser BOOLEAN'
+        self.errrorText_IF = 'En un IF, el tipo de dato de ser BOOLEAN'
+        self.errrorText_WHILE = 'En ciclos (WHILE) el valor DENTRO del while debe ser tipo BOOLEAN'
+        self.errrorText_EQUALS = 'El valor de asignación no es del mismo tipo. Revise si tiene OTRO tipo de dato del declarado.'
+        self.errrorText_TIPO_RETORNO = 'Un método debe retornar el mismo tipo de dato que DECLARO.'
+        self.errrorText_TIPOVOID = 'Un método VOID no retorna NADA. Revise.'
+        self.errrorText_ESTRUCTURAGENERAL = 'El tipo de dato debe ser STRUCT o ESTRUCTURA.'
+        self.errrorText_METODO_NO_DECLARADO = 'No hay un método con este nombre. No existe o no esta definido en el SCOPE.'
+        self.errrorText_VAR_REPETIDA = 'No es posible declarar una variable con el mismo nombre de un método. Tenga imaginación.'
 
-    def AddEntryToTable(self, line, col, msg):
+    def AddEntryToTable(self, linea, columna, mensaje):
+        """
+        Método para agregar un nuevo error al stack
+        *@param linea: la linea
+        *@param columna:la columna
+        *@param mensaje: el mensaje
+        """
         self.errores.append({
-            'Line': line,
-            'Col': col,
-            'Msg': msg
+            'Line': linea,
+            'Col': columna,
+            'Msg': mensaje
         })
 
-    def ToString(self):
+    def getAllErrors(self):
+        """
+        Retorna todos los errores de error.
+        """
+        innerArray = []
         for error in self.errores:
-            print(' => Line ' + str(error['Line']) +
-                  ':' + str(error['Col']) + ' ' + error['Msg'])
-
-    def GetErrores(self):
-        errors = []
-        for error in self.errores:
-            errors.append(
-                ' => Line ' + str(error['Line']) + ':' + str(error['Col']) + ' ' + error['Msg'])
-        return errors
+            innerArray.append(
+                'Linea: ' + str(error['Line']) + ':' + str(error['Col']) + ' con mensaje de ' + error['Msg'])
+        return innerArray

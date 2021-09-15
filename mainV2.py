@@ -131,7 +131,7 @@ class DecafPrinter(decafAlejandroListener):
                         line = ctx.getChild(i + 1).start.line
                         col = ctx.getChild(i + 1).start.column
                         self.errores.AddEntryToTable(
-                            line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
+                            line, col, self.errores.errrorText_VARDUPLICADA)
 
                     parameters.append(
                         {'Tipo': typeParameter, 'Id': idParameter})
@@ -144,7 +144,7 @@ class DecafPrinter(decafAlejandroListener):
             line = ctx.method_name().start.line
             col = ctx.method_name().start.column
             self.errores.AddEntryToTable(
-                line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
+                line, col, self.errores.errrorText_VARDUPLICADA)
 
         self.NewScope()
 
@@ -169,7 +169,7 @@ class DecafPrinter(decafAlejandroListener):
             self.node_type[ctx] = self.ERROR
             line = ctx.return_type().start.line
             col = ctx.return_type().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.RETURN_VOID)
+            self.errores.AddEntryToTable(line, col, self.errores.errrorText_TIPOVOID)
             return
 
         if return_type != block_type:
@@ -180,7 +180,7 @@ class DecafPrinter(decafAlejandroListener):
             self.node_type[ctx] = self.ERROR
             line = ctx.block().start.line
             col = ctx.block().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.RETURN_TYPE)
+            self.errores.AddEntryToTable(line, col, self.errores.errrorText_TIPO_RETORNO)
 
         self.node_type[ctx] = self.VOID
 
@@ -200,7 +200,7 @@ class DecafPrinter(decafAlejandroListener):
                 line = ctx.field_var().var_id().start.line
                 col = ctx.field_var().var_id().start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.SHADOW_PARAMETER)
+                    line, col, self.errores.errrorText_VAR_REPETIDA)
                 return
 
             if self.current_scope.getSymbolFromTable(id) == 0:
@@ -224,7 +224,7 @@ class DecafPrinter(decafAlejandroListener):
                 line = ctx.field_var().var_id().start.line
                 col = ctx.field_var().var_id().start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
+                    line, col, self.errores.errrorText_VARDUPLICADA)
         elif ctx.field_var().array_id() is not None:
             id = ctx.field_var().array_id().getChild(0).getText()
 
@@ -234,7 +234,7 @@ class DecafPrinter(decafAlejandroListener):
                 line = ctx.field_var().var_id().start.line
                 col = ctx.field_var().var_id().start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.SHADOW_PARAMETER)
+                    line, col, self.errores.errrorText_VAR_REPETIDA)
                 return
 
             if self.current_scope.getSymbolFromTable(id) == 0:
@@ -276,7 +276,7 @@ class DecafPrinter(decafAlejandroListener):
                 line = ctx.field_var().var_id().start.line
                 col = ctx.field_var().var_id().start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
+                    line, col, self.errores.errrorText_VARDUPLICADA)
 
     def enterStruct_declr(self, cstx: decafAlejandroParser.Struct_declrContext):
         self.NewScope()
@@ -303,7 +303,7 @@ class DecafPrinter(decafAlejandroListener):
             line = ctx.start.line
             col = ctx.start.column
             self.errores.AddEntryToTable(
-                line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
+                line, col, self.errores.errrorText_VARDUPLICADA)
 
     def enterVar_id(self, ctx: decafAlejandroParser.Var_idContext):
         parent = ctx.parentCtx
@@ -398,7 +398,7 @@ class DecafPrinter(decafAlejandroListener):
                     line = child.var_id().start.line
                     col = child.var_id().start.column
                     self.errores.AddEntryToTable(
-                        line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
+                        line, col, self.errores.errrorText_VARDUPLICADA)
 
     def exitField_declr(self, ctx: decafAlejandroParser.Field_declrContext):
         self.node_type[ctx] = self.VOID
@@ -484,7 +484,7 @@ class DecafPrinter(decafAlejandroListener):
             line = ctx.method_name().start.line
             col = ctx.method_name().start.column
             self.errores.AddEntryToTable(
-                line, col, self.errores.NUMERO_PARAMETROS_METODO)
+                line, col, self.errores.errrorText_CANTIDAD_PARAMETROS)
             return
 
         if len(parameters) == 0:
@@ -506,7 +506,7 @@ class DecafPrinter(decafAlejandroListener):
                 line = parameters[i].start.line
                 col = parameters[i].start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.TIPO_PARAMETROS_METODO)
+                    line, col, self.errores.errrorText_TIPOMETODOS)
 
             if hasError:
                 self.node_type[ctx] = self.ERROR
@@ -546,7 +546,7 @@ class DecafPrinter(decafAlejandroListener):
             self.node_type[ctx] = self.ERROR
             line = ctx.expr().start.line
             col = ctx.expr().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.IF_BOOLEAN)
+            self.errores.AddEntryToTable(line, col, self.errores.errrorText_IF)
             return
 
         hijos_tipo = [i for i in ctx.children if isinstance(
@@ -561,33 +561,33 @@ class DecafPrinter(decafAlejandroListener):
                 line = hijo_1.start.line
                 col = hijo_1.start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.RETURN_TYPE)
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
         else:
             if self.node_type[hijos_tipo[0]] != tipo_return and self.node_type[hijos_tipo[1]] != tipo_return:
                 self.node_type[ctx] = self.ERROR
                 line = hijos_tipo[0].start.line
                 col = hijos_tipo[0].start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.RETURN_TYPE)
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
 
                 line = hijos_tipo[1].start.line
                 col = hijos_tipo[1].start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.RETURN_TYPE)
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
                 return
             elif self.node_type[hijos_tipo[0]] != tipo_return:
                 self.node_type[ctx] = self.ERROR
                 line = hijos_tipo[0].start.line
                 col = hijos_tipo[0].start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.RETURN_TYPE)
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
                 return
             elif self.node_type[hijos_tipo[1]] != tipo_return:
                 self.node_type[ctx] = self.ERROR
                 line = hijos_tipo[1].start.line
                 col = hijos_tipo[1].start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.RETURN_TYPE)
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
                 return
 
             if self.node_type[hijos_tipo[0]] == self.node_type[hijos_tipo[1]]:
@@ -607,7 +607,7 @@ class DecafPrinter(decafAlejandroListener):
             self.node_type[ctx] = self.ERROR
             line = ctx.expr().start.line
             col = ctx.expr().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.WHILE_BOOLEAN)
+            self.errores.AddEntryToTable(line, col, self.errores.errrorText_WHILE)
             return
 
         hijos_tipo = [self.node_type[i] for i in ctx.children if isinstance(
@@ -653,7 +653,7 @@ class DecafPrinter(decafAlejandroListener):
             result_type = self.ERROR
             line = ctx.assign_op().start.line
             col = ctx.assign_op().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.ASIGNACION)
+            self.errores.AddEntryToTable(line, col, self.errores.errrorText_EQUALS)
         self.node_type[ctx] = result_type
 
     def exitExpr(self, ctx: decafAlejandroParser.ExprContext):
@@ -692,7 +692,7 @@ class DecafPrinter(decafAlejandroListener):
                     hasError = True
                     line = ctx.getChild(0).start.line
                     col = ctx.getChild(0).start.column
-                    error = self.errores.EQ_OPS
+                    error = self.errores.errrorText_EQ_OPS
             elif ctx.arith_op() is not None or ctx.rel_op() is not None:
                 if tipo1 == self.INT and tipo2 == self.INT:
                     result_type = self.INT
@@ -717,9 +717,9 @@ class DecafPrinter(decafAlejandroListener):
                         col = ctx.getChild(2).start.column
 
                     if ctx.arith_op() is not None:
-                        error = self.errores.ARITH_OP
+                        error = self.errores.errrorText_ARITMETICA
                     else:
-                        error = self.errores.REL_OP
+                        error = self.errores.errrorText_REL_OP
             elif ctx.cond_op() is not None:
                 if tipo1 == self.BOOLEAN and tipo2 == self.BOOLEAN:
                     result_type = self.BOOLEAN
@@ -732,7 +732,7 @@ class DecafPrinter(decafAlejandroListener):
                         line = ctx.getChild(2).start.line
                         col = ctx.getChild(2).start.column
 
-                    error = self.errores.COND_OP
+                    error = self.errores.errrorText_CONDICIONALES_GENERAL
             else:
                 result_type = self.VOID
 
@@ -822,7 +822,7 @@ class DecafPrinter(decafAlejandroListener):
                         line = location.start.line
                         col = location.start.column
                         self.errores.AddEntryToTable(
-                            line, col, self.errores.MUST_STRUCT)
+                            line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
                         self.node_type[location] = self.ERROR
 
                 return tipo_retorno
@@ -838,7 +838,7 @@ class DecafPrinter(decafAlejandroListener):
                 line = location.start.line
                 col = location.start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.MUST_STRUCT)
+                    line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
             else:
                 if 'struct' in description:
                     child = self.tabla_struct.getChild(parent_type, id)
@@ -856,7 +856,7 @@ class DecafPrinter(decafAlejandroListener):
                     line = location.start.line
                     col = location.start.column
                     self.errores.AddEntryToTable(
-                        line, col, self.errores.MUST_STRUCT)
+                        line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
 
             result_type = self.IterateChildren(
                 location.var_id().location(), child_type, child_desc)
@@ -917,7 +917,7 @@ class DecafPrinter(decafAlejandroListener):
                         line = location.start.line
                         col = location.start.column
                         self.errores.AddEntryToTable(
-                            line, col, self.errores.MUST_STRUCT)
+                            line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
                         self.node_type[location] = self.ERROR
                 return tipo_retorno
 
@@ -968,7 +968,7 @@ class DecafPrinter(decafAlejandroListener):
                 line = location.start.line
                 col = location.start.column
                 self.errores.AddEntryToTable(
-                    line, col, self.errores.MUST_STRUCT)
+                    line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
 
             result_type = self.IterateChildren(
                 location.array_id().location(), child_type, child_desc)
@@ -1079,7 +1079,7 @@ class DecafPrinter(decafAlejandroListener):
             if len(main_method['Parameters']) > 0:
                 self.node_type[ctx] = self.ERROR
                 self.errores.AddEntryToTable(
-                    0, 0, self.errores.MAIN_PARAMETERLESS)
+                    0, 0, self.errores.errrorText_MAIN_NOT_EXHISTS)
             else:
                 hasError = self.ChildrenHasError(ctx)
                 if hasError:
@@ -1088,7 +1088,7 @@ class DecafPrinter(decafAlejandroListener):
                     self.node_type[ctx] = self.VOID
         else:
             self.node_type[ctx] = self.ERROR
-            self.errores.AddEntryToTable(0, 0, self.errores.MAIN_PARAMETERLESS)
+            self.errores.AddEntryToTable(0, 0, self.errores.errrorText_MAIN_NOT_EXHISTS)
 
         self.current_scope.valueToTable()
         print('---------- FIN --------------')

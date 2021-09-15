@@ -866,7 +866,7 @@ class decafAlejandroPrinter(decafAlejandroListener):
                     # agregamos el nuevo if como metodo
                     self.tablaSimbolos.AddNewMethod_DictMethod(
                         "", scopeNuevo, [], False, self.scopeAnterior)
-                    # variables de EQ_OPS
+                    # variables de errrorText_EQ_OPS
                     arraySplitEqOps = []
                     # variables de cond OPS
                     arraySplitCondOps = []
