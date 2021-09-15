@@ -169,7 +169,8 @@ class DecafPrinter(decafAlejandroListener):
             self.node_type[ctx] = self.ERROR
             line = ctx.return_type().start.line
             col = ctx.return_type().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.errrorText_TIPOVOID)
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_TIPOVOID)
             return
 
         if return_type != block_type:
@@ -180,7 +181,8 @@ class DecafPrinter(decafAlejandroListener):
             self.node_type[ctx] = self.ERROR
             line = ctx.block().start.line
             col = ctx.block().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.errrorText_TIPO_RETORNO)
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_TIPO_RETORNO)
 
         self.node_type[ctx] = self.VOID
 
@@ -607,7 +609,8 @@ class DecafPrinter(decafAlejandroListener):
             self.node_type[ctx] = self.ERROR
             line = ctx.expr().start.line
             col = ctx.expr().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.errrorText_WHILE)
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_WHILE)
             return
 
         hijos_tipo = [self.node_type[i] for i in ctx.children if isinstance(
@@ -653,7 +656,8 @@ class DecafPrinter(decafAlejandroListener):
             result_type = self.ERROR
             line = ctx.assign_op().start.line
             col = ctx.assign_op().start.column
-            self.errores.AddEntryToTable(line, col, self.errores.errrorText_EQUALS)
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_EQUALS)
         self.node_type[ctx] = result_type
 
     def exitExpr(self, ctx: decafAlejandroParser.ExprContext):
@@ -698,7 +702,7 @@ class DecafPrinter(decafAlejandroListener):
                     result_type = self.INT
                     if ctx.rel_op() is not None:
                         result_type = self.BOOLEAN
-                elif tipo1 == self.FLOAT and tipo2 == self.INT:
+                    """ elif tipo1 == self.FLOAT and tipo2 == self.INT:
                     result_type = self.FLOAT
                     if ctx.rel_op() is not None:
                         result_type = self.BOOLEAN
@@ -706,7 +710,8 @@ class DecafPrinter(decafAlejandroListener):
                 elif tipo1 == self.INT and tipo2 == self.FLOAT:
                     result_type = self.FLOAT
                     if ctx.rel_op() is not None:
-                        result_type = self.BOOLEAN
+                        result_type = self.BOOLEAN 
+                    """
                 else:
                     hasError = True
                     if tipo1 != self.INT:
@@ -1088,7 +1093,8 @@ class DecafPrinter(decafAlejandroListener):
                     self.node_type[ctx] = self.VOID
         else:
             self.node_type[ctx] = self.ERROR
-            self.errores.AddEntryToTable(0, 0, self.errores.errrorText_MAIN_NOT_EXHISTS)
+            self.errores.AddEntryToTable(
+                0, 0, self.errores.errrorText_MAIN_NOT_EXHISTS)
 
         self.current_scope.valueToTable()
         print('---------- FIN --------------')

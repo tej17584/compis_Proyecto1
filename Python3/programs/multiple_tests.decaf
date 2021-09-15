@@ -18,7 +18,7 @@ class Program {
 		if (n==0) {
 			return 1;
 		} else {
-			return n*factorial(n-112);
+			return n*factorial(n-42);
 		}
 	}
 
