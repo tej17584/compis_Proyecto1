@@ -18,7 +18,7 @@ class Program {
 		if (n==0) {
 			return 1;
 		} else {
-			return n*factorial(n-1);
+			return n*factorial(n-112);
 		}
 	}
 
@@ -41,7 +41,7 @@ class Program {
 		boolean patito;
 
 		i = 0;
-		j=0;
+		j=34;
 		z.a = 3;
 		patito = True;
 
