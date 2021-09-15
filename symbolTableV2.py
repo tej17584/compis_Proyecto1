@@ -35,28 +35,30 @@ class generalSymbolTable():
         *@param: offset: el offset de ese valor
         *@param: isParameter: bool para el parametro
         """
-        self.dictSimbolos.append({
-            'Tipo': typeValue,
-            'Id': idValue,
-            'Size': size,
-            'Offset': offset,
-            'IsParameter': isParameter
-        })
+        self.dictSimbolos.append({'Tipo': typeValue, 'Id': idValue, 'Size': size, 'Offset': offset, 'IsParameter': isParameter
+                                  })
         self.offsetVariables += size
 
-    def LookUp(self, variable):
-        symbols_copy = self.dictSimbolos.copy()
-        symbols_copy.reverse()
-        for symbol in symbols_copy:
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado o 0
+        *@param: variable: el id del valor
+        """
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
             if symbol['Id'] == variable:
                 return symbol
 
         return 0
 
-    def GetSize(self):
+    def getSize(self):
+        """
+        Retorna el tamaño de la tabla
+        """
         return sum(symbol['Size'] for symbol in self.dictSimbolos)
 
-    def ToTable(self):
+    def arrayToTable(self):
         self.pretty_table.field_names = [
             'Tipo', 'ID', 'Size', 'Offset', 'IsParameter']
         for i in self.dictSimbolos:
@@ -79,15 +81,19 @@ class tableDictParameters():
             'Id': idValue,
         })
 
-    def LookUp(self, variable):
-        symbols_copy = self.dictSimbolos.copy()
-        symbols_copy.reverse()
-        for symbol in symbols_copy:
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
             if symbol['Id'] == variable:
                 return symbol
         return 0
 
-    def ToTable(self):
+    def arrayToTable(self):
         self.pretty_table.field_names = ['Tipo', 'ID']
         for i in self.dictSimbolos:
             self.pretty_table.add_row(list(i.values()))
@@ -97,7 +103,7 @@ class tableDictParameters():
         self.pretty_table.clear_rows()
 
     def Clear(self):
-        self.ToTable()
+        self.arrayToTable()
         self.dictSimbolos = []
 
 
@@ -114,15 +120,19 @@ class dictTableStruct():
             'Description': description
         })
 
-    def LookUp(self, variable):
-        symbols_copy = self.dictSimbolos.copy()
-        symbols_copy.reverse()
-        for symbol in symbols_copy:
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
             if symbol['Id'] == variable:
                 return symbol
         return 0
 
-    def ToTable(self):
+    def arrayToTable(self):
         self.pretty_table.field_names = ['Parent', 'Tipo', 'ID', 'Description']
         for i in self.dictSimbolos:
             self.pretty_table.add_row(list(i.values()))
@@ -133,8 +143,9 @@ class dictTableStruct():
 
     def ExtractInfo(self, parent, scope, tabla_tipo):
         for i in scope.dictSimbolos:
-            typeValue = tabla_tipo.LookUp(i['Tipo'])
-            self.AddEntryToTable(parent, i['Tipo'], i['Id'], typeValue['Description'])
+            typeValue = tabla_tipo.getSymbolFromTable(i['Tipo'])
+            self.AddEntryToTable(
+                parent, i['Tipo'], i['Id'], typeValue['Description'])
 
     def GetChild(self, typeValue, name):
         copy_symbols = self.dictSimbolos.copy()
@@ -160,14 +171,18 @@ class dictTableMetods():
             'Return': returnVariable
         })
 
-    def LookUp(self, variable):
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
         for method in self._methods:
             if method['Id'] == variable:
                 return method
 
         return 0
 
-    def ToTable(self):
+    def arrayToTable(self):
         self.pretty_table.field_names = ['Tipo', 'ID', 'Parameters', 'Return']
         for i in self._methods:
             self.pretty_table.add_row(list(i.values()))
@@ -197,7 +212,11 @@ class dictTableVars():
             'Description': description
         })
 
-    def LookUp(self, typeValue):
+    def getSymbolFromTable(self, typeValue):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
         types_copy = self._types.copy()
         types_copy.reverse()
         for type in types_copy:
