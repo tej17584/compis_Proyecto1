@@ -90,5 +90,5 @@ class SemanticError():
         innerArray = []
         for error in self.errores:
             innerArray.append(
-                'Linea: ' + str(error['Line']) + ':' + str(error['Col']) + ' con mensaje de ' + error['Msg'])
+                'Linea: ' + str(error['Line']) + ':' + str(error['Col']) + ' ======> ' + error['Msg'])
         return innerArray
