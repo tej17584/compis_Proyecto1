@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
         self.windowEditor = QWidget()
         self.windowResults = QWidget()
 
-        # # Add tabs
+        # # AddEntryToTable tabs
         self.tabs.addTab(self.windowEditor, "Text Editor")
         self.tabs.addTab(self.windowResults, "Results")
 
