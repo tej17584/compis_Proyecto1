@@ -2,113 +2,169 @@
 Nombre: Alejandro Tejada
 Curso: Diseño Compiladores
 Fecha: agosto 2021
-Programa: tablaSimbolos.py
+Programa: tablaSimbolosv2.py
 Propósito: Este programa alojará 3 clases para cada tabla. Este es una nueva version del codigo
 de las tablas de símbolos.
 V 2.0
 """
-#zona de imports
+# zona de imports
 from prettytable import PrettyTable
 from antlr4.tree.Tree import Tree
 from funciones import *
 import sys
 import json
 
-class TablaSimbolos():
+
+class generalSymbolTable():
     def __init__(self):
-        self.pretty_table = PrettyTable()
-        self._symbols = []
-        self._offset = 0
+        """
+        Init de los métodos de la tabla de simbolos
+        """
+        self.dictSimbolos = []  # diccionario para los simbolos
+        self.offsetVariables = 0  # ofsset de variables y de valores
+        self.pretty_table = PrettyTable()  # instancia de pretty table
+
         print(' -- INICIANDO NUEVO AMBITO --')
 
-    def Add(self, tipo, id, size, offset, isParameter):
-        self._symbols.append({
-            'Tipo': tipo,
-            'Id': id,
-            'Size': size,
-            'Offset': offset,
-            'IsParameter': isParameter
-        })
-        self._offset += size
+    def AddEntryToTable(self, typeValue, idValue, size, offset, isParameter):
+        """
+        Agrega un valor a la tabla de simbolos general
+        *@param: typeValue: el tipo de valor
+        *@param: scope: el valor del id
+        *@param: size: el size de ese valor
+        *@param: offset: el offset de ese valor
+        *@param: isParameter: bool para el parametro
+        """
+        self.dictSimbolos.append({'Tipo': typeValue, 'Id': idValue, 'Size': size, 'Offset': offset, 'IsParameter': isParameter
+                                  })
+        self.offsetVariables += size
 
-    def LookUp(self, variable):
-        symbols_copy = self._symbols.copy()
-        symbols_copy.reverse()
-        for symbol in symbols_copy:
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado o 0
+        *@param: variable: el id del valor
+        """
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
             if symbol['Id'] == variable:
                 return symbol
 
         return 0
 
-    def GetSize(self):
-        return sum(symbol['Size'] for symbol in self._symbols)
+    def getSize(self):
+        """
+        Retorna el tamaño de la tabla
+        """
+        return sum(symbol['Size'] for symbol in self.dictSimbolos)
 
-    def ToTable(self):
-        self.pretty_table.field_names = ['Tipo', 'ID', 'Size', 'Offset', 'IsParameter']
-        for i in self._symbols:
+    def valueToTable(self):
+        """
+        transforma un array o valor a tabla
+        """
+        self.pretty_table.field_names = [
+            'Tipo', 'ID', 'Size', 'Offset', 'IsParameter']
+        for i in self.dictSimbolos:
             self.pretty_table.add_row(list(i.values()))
 
         print(' ** SIMBOLOS **')
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
-class TablaParametros():
+
+class tableDictParameters():
     def __init__(self):
+        """
+        Init de la tabla de parámetros
+        """
         self.pretty_table = PrettyTable()
-        self._symbols = []
+        self.dictSimbolos = []
         print(' -- INICIANDO NUEVO AMBITO --')
 
-    def Add(self, tipo, id):
-        self._symbols.append({
-            'Tipo': tipo,
-            'Id': id,
+    def AddEntryToTable(self, typeValue, idValue):
+        """
+        Agregamos una entrada a la tabla de parámetros
+        *@param: typeValue: el tipo de valor
+        *@param: idValue: el id del valor
+        """
+        self.dictSimbolos.append({
+            'Tipo': typeValue,
+            'Id': idValue,
         })
 
-    def LookUp(self, variable):
-        symbols_copy = self._symbols.copy()
-        symbols_copy.reverse()
-        for symbol in symbols_copy:
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
             if symbol['Id'] == variable:
                 return symbol
         return 0
 
-    def ToTable(self):
+    def valueToTable(self):
+        """
+        transforma un array o valor a tabla
+        """
         self.pretty_table.field_names = ['Tipo', 'ID']
-        for i in self._symbols:
+        for i in self.dictSimbolos:
             self.pretty_table.add_row(list(i.values()))
 
         print(' ** PARAMETERS **')
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
-    def Clear(self):
-        self.ToTable()
-        self._symbols = []
+    def cleanTable(self):
+        """
+        limpia una tabla, en este caso el dict de simbolos
+        """
+        self.valueToTable()
+        self.dictSimbolos = []
 
-class TablaStruct():
+
+class dictTableStruct():
     def __init__(self):
+        """
+        init d ela tabla de estructuras
+        """
         self.pretty_table = PrettyTable()
-        self._symbols = []
+        self.dictSimbolos = []
 
-    def Add(self, parent, tipo, id, description):
-        self._symbols.append({
+    def AddEntryToTable(self, parent, typeValue, idValue, description):
+        """
+        Agrega un nuevo valor de estructura
+        *@param: parent: el padre de la struct
+        *@param: typeValue: el tipo
+        *@param: idValue: el id del valor
+        *@param: description: la descripcion o valor
+        """
+        self.dictSimbolos.append({
             'Parent': parent,
-            'Tipo': tipo,
-            'Id': id,
+            'Tipo': typeValue,
+            'Id': idValue,
             'Description': description
         })
 
-    def LookUp(self, variable):
-        symbols_copy = self._symbols.copy()
-        symbols_copy.reverse()
-        for symbol in symbols_copy:
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
             if symbol['Id'] == variable:
                 return symbol
         return 0
 
-    def ToTable(self):
+    def valueToTable(self):
+        """
+        transforma un array o valor a tabla
+        """
         self.pretty_table.field_names = ['Parent', 'Tipo', 'ID', 'Description']
-        for i in self._symbols:
+        for i in self.dictSimbolos:
             self.pretty_table.add_row(list(i.values()))
 
         print(' ** STRUCTS **')
@@ -116,110 +172,121 @@ class TablaStruct():
         self.pretty_table.clear_rows()
 
     def ExtractInfo(self, parent, scope, tabla_tipo):
-        for i in scope._symbols:
-            tipo = tabla_tipo.LookUp(i['Tipo'])
-            self.Add(parent, i['Tipo'], i['Id'], tipo['Description'])
-    
-    def GetChild(self, tipo, name):
-        copy_symbols = self._symbols.copy()
+        """
+        Retorna el valor de informacion de la estructura y lo guarda en la tabla
+        *@param: parent: el padre
+        *@param: scope: el scope o lugar
+        *@param: tabla_tipo: el tipo de tabla
+        """
+        for i in scope.dictSimbolos:
+            typeValue = tabla_tipo.getSymbolFromTable(i['Tipo'])
+            self.AddEntryToTable(
+                parent, i['Tipo'], i['Id'], typeValue['Description'])
+
+    def getChild(self, typeValue, name):
+        """
+        retorna el hijo
+        *@param: typeValue:el tipo de valor
+        *@param: scnameope: eel nombre
+        """
+        copy_symbols = self.dictSimbolos.copy()
         copy_symbols.reverse()
         for symbol in copy_symbols:
-            if symbol['Parent'] in tipo and symbol['Id'] == name:
+            if symbol['Parent'] in typeValue and symbol['Id'] == name:
                 return symbol
 
         return 0
 
-class TablaMetodos():
+
+class dictTableMetods():
     def __init__(self):
+        """
+        init de la tabla de métodos
+        """
         self.pretty_table = PrettyTable()
-        self._methods = []
+        self.arrayMetodos = []
         print(' -- INICIANDO NUEVO AMBITO --')
 
-    def Add(self, tipo, id, parameters, returnVariable):
-        self._methods.append({
-            'Tipo': tipo,
-            'Id': id,
+    def AddEntryToTable(self, typeValue, idValue, parameters, returnVariable):
+        """
+        agrega un valor a la tabla
+        *@param: typeValue: el tipo de método
+        *@param: idValue: el ID
+        *@param: parameters: los parametros si posee
+        *@param: returnVariable: la variable de retorno si tiene
+        """
+        self.arrayMetodos.append({
+            'Tipo': typeValue,
+            'Id': idValue,
             'Parameters': parameters,
             'Return': returnVariable
         })
 
-    def LookUp(self, variable):
-        for method in self._methods:
-            if method['Id'] == variable:
-                return method
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
+        for metodo in self.arrayMetodos:
+            if metodo['Id'] == variable:
+                return metodo
 
         return 0
 
-    def ToTable(self):
+    def valueToTable(self):
+        """
+        transforma un array o valor a tabla
+        """
         self.pretty_table.field_names = ['Tipo', 'ID', 'Parameters', 'Return']
-        for i in self._methods:
+        for i in self.arrayMetodos:
             self.pretty_table.add_row(list(i.values()))
 
         print(' ** METODOS **')
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
-class TablaTipos():
+
+class dictTableVars():
     def __init__(self):
-        self.PRIMITIVE = 'primitive'
+        """
+        Init de la tabla de variables
+        """
+        # enumerador de valores
         self.ARRAY = 'array'
         self.STRUCT = 'struct'
-
-        self._types = []
-        self.Add('int', 4, self.PRIMITIVE)
-        self.Add('char', 2, self.PRIMITIVE)
-        self.Add('boolean', 1, self.PRIMITIVE)
-        self.Add('void', 0, self.PRIMITIVE)
+        self.PRIMITIVE = 'primitive'
+        self.typesArray = []
+        # agregamos esos valores a la tabla de entradas con el size de cada una
+        self.AddEntryToTable('int', 4, self.PRIMITIVE)
+        self.AddEntryToTable('char', 2, self.PRIMITIVE)
+        self.AddEntryToTable('boolean', 1, self.PRIMITIVE)
+        self.AddEntryToTable('void', 0, self.PRIMITIVE)
         print(' -- INICIANDO TABLA TIPOS --')
 
-    def Add(self, tipo, size, description):
-        self._types.append({
-            'Tipo': tipo,
+    def AddEntryToTable(self, typeValue, size, description):
+        """
+        Retorna el valor pasado
+        *@param: typeValue: el tipo
+        *@param: size: el tamaño de la var
+        *@param: description: la descripcion de la variable
+        """
+        self.typesArray.append({
+            'Tipo': typeValue,
             'Size': size,
             'Description': description
         })
 
-    def LookUp(self, tipo):
-        types_copy = self._types.copy()
-        types_copy.reverse()
-        for type in types_copy:
-            if type['Tipo'] == tipo:
+    def getSymbolFromTable(self, typeValue):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
+        innerArray = self.typesArray.copy()
+        innerArray.reverse()
+        for type in innerArray:
+            if type['Tipo'] == typeValue:
                 return type
         return 0
 
-class SemanticError():
-    def __init__(self):
-        self.errores = []
-        self.IDENTIFICADOR_DECLARADO_MUCHAS_VECES = 'Identificador no puede estar declarado más de una vez en el mismo ámbito.'
-        self.MAIN_PARAMETERLESS = 'No existe un método llamado main sin parámetros.'
-        self.NUMERO_PARAMETROS_METODO = 'El número de argumentos en la llamada al método no coincide.'
-        self.TIPO_PARAMETROS_METODO = 'El tipo de dato en los argumentos en la llamada al método no coincide.'
-        self.EQ_OPS = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
-        self.ARITH_OP = 'El tipo de dato de operando debe ser INT para operadores aritméticos.'
-        self.REL_OP = 'El tipo de dato de operando debe ser INT para operadores de relación.'
-        self.COND_OP = 'El tipo de dato en operación condicional debe ser boolean.'
-        self.IF_BOOLEAN = 'El tipo de dato dentro de condición de IF debe ser boolean.'
-        self.WHILE_BOOLEAN = 'El tipo de dato dentro de condición de WHILE debe ser boolean.'
-        self.ASIGNACION = 'La asignación de dos valores deben ser del mismo tipo.'
-        self.RETURN_TYPE = 'El valor de retorno debe de ser del mismo tipo con que fue declarado el método.'
-        self.RETURN_VOID = 'Un método declarado VOID no puede retornar ningún valor.'
-        self.MUST_STRUCT = 'El tipo de dato de la variable debe ser STRUCT.'
-        self.METHOD_NOT_DECLARED = 'El método no existe o no hay definición del método previamente a ser invocado.'
-        self.SHADOW_PARAMETER = 'No es posible declarar una variable con el nombre de un parámetro.'
 
-    def Add(self, line, col, msg):
-        self.errores.append({
-            'Line': line,
-            'Col': col,
-            'Msg': msg
-        })
 
-    def ToString(self):
-        for error in self.errores:
-            print(' => Line ' + str(error['Line']) + ':' + str(error['Col']) + ' ' + error['Msg'])
-
-    def GetErrores(self):
-        errors = []
-        for error in self.errores:
-            errors.append(' => Line ' + str(error['Line']) + ':' + str(error['Col']) + ' ' + error['Msg'])
-        return errors

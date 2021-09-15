@@ -110,7 +110,7 @@ DIGIT               : [0-9];
 
 //BOOL_LITERAL        : 'True' | 'False';
 
-STRING_LITERAL      : ('"' ( ALPHA_NUM ) '"') | (APOSTROPHE ( ALPHA_NUM ) APOSTROPHE);
+STRING_LITERAL      : ('"' ( ALPHA_NUM )* '"') | (APOSTROPHE ( ALPHA_NUM ) APOSTROPHE);
 
 ALPHA_NUM           : ALPHA | DIGIT;
 
