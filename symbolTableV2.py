@@ -14,16 +14,27 @@ from funciones import *
 import sys
 import json
 
-class TablaSimbolos():
+class generalSymbolTable():
     def __init__(self):
+        """
+        Init de los métodos de la tabla de simbolos
+        """
         self.pretty_table = PrettyTable()
         self._symbols = []
         self._offset = 0
         print(' -- INICIANDO NUEVO AMBITO --')
 
-    def Add(self, tipo, id, size, offset, isParameter):
+    def Add(self, typeValue, id, size, offset, isParameter):
+        """
+        Init de los métodos de la tabla de simbolos
+        *@param: typeValue: el id de la variable a checar el typeValue
+        *@param: scope: el scope actual
+        *@param: varID: el id de la variable a checar el typeValue
+        *@param: scope: el scope actual
+        *@param: varID: el id de la variable a checar el typeValue
+        """
         self._symbols.append({
-            'Tipo': tipo,
+            'Tipo': typeValue,
             'Id': id,
             'Size': size,
             'Offset': offset,
@@ -52,15 +63,15 @@ class TablaSimbolos():
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
-class TablaParametros():
+class tableDictParameters():
     def __init__(self):
         self.pretty_table = PrettyTable()
         self._symbols = []
         print(' -- INICIANDO NUEVO AMBITO --')
 
-    def Add(self, tipo, id):
+    def Add(self, typeValue, id):
         self._symbols.append({
-            'Tipo': tipo,
+            'Tipo': typeValue,
             'Id': id,
         })
 
@@ -85,15 +96,15 @@ class TablaParametros():
         self.ToTable()
         self._symbols = []
 
-class TablaStruct():
+class dictTableStruct():
     def __init__(self):
         self.pretty_table = PrettyTable()
         self._symbols = []
 
-    def Add(self, parent, tipo, id, description):
+    def Add(self, parent, typeValue, id, description):
         self._symbols.append({
             'Parent': parent,
-            'Tipo': tipo,
+            'Tipo': typeValue,
             'Id': id,
             'Description': description
         })
@@ -117,27 +128,27 @@ class TablaStruct():
 
     def ExtractInfo(self, parent, scope, tabla_tipo):
         for i in scope._symbols:
-            tipo = tabla_tipo.LookUp(i['Tipo'])
-            self.Add(parent, i['Tipo'], i['Id'], tipo['Description'])
+            typeValue = tabla_tipo.LookUp(i['Tipo'])
+            self.Add(parent, i['Tipo'], i['Id'], typeValue['Description'])
     
-    def GetChild(self, tipo, name):
+    def GetChild(self, typeValue, name):
         copy_symbols = self._symbols.copy()
         copy_symbols.reverse()
         for symbol in copy_symbols:
-            if symbol['Parent'] in tipo and symbol['Id'] == name:
+            if symbol['Parent'] in typeValue and symbol['Id'] == name:
                 return symbol
 
         return 0
 
-class TablaMetodos():
+class dictTableMetods():
     def __init__(self):
         self.pretty_table = PrettyTable()
         self._methods = []
         print(' -- INICIANDO NUEVO AMBITO --')
 
-    def Add(self, tipo, id, parameters, returnVariable):
+    def Add(self, typeValue, id, parameters, returnVariable):
         self._methods.append({
-            'Tipo': tipo,
+            'Tipo': typeValue,
             'Id': id,
             'Parameters': parameters,
             'Return': returnVariable
@@ -159,7 +170,7 @@ class TablaMetodos():
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
-class TablaTipos():
+class dictTableVars():
     def __init__(self):
         self.PRIMITIVE = 'primitive'
         self.ARRAY = 'array'
@@ -172,18 +183,18 @@ class TablaTipos():
         self.Add('void', 0, self.PRIMITIVE)
         print(' -- INICIANDO TABLA TIPOS --')
 
-    def Add(self, tipo, size, description):
+    def Add(self, typeValue, size, description):
         self._types.append({
-            'Tipo': tipo,
+            'Tipo': typeValue,
             'Size': size,
             'Description': description
         })
 
-    def LookUp(self, tipo):
+    def LookUp(self, typeValue):
         types_copy = self._types.copy()
         types_copy.reverse()
         for type in types_copy:
-            if type['Tipo'] == tipo:
+            if type['Tipo'] == typeValue:
                 return type
         return 0
 
@@ -193,17 +204,17 @@ class SemanticError():
         self.IDENTIFICADOR_DECLARADO_MUCHAS_VECES = 'Identificador no puede estar declarado más de una vez en el mismo ámbito.'
         self.MAIN_PARAMETERLESS = 'No existe un método llamado main sin parámetros.'
         self.NUMERO_PARAMETROS_METODO = 'El número de argumentos en la llamada al método no coincide.'
-        self.TIPO_PARAMETROS_METODO = 'El tipo de dato en los argumentos en la llamada al método no coincide.'
-        self.EQ_OPS = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
-        self.ARITH_OP = 'El tipo de dato de operando debe ser INT para operadores aritméticos.'
-        self.REL_OP = 'El tipo de dato de operando debe ser INT para operadores de relación.'
-        self.COND_OP = 'El tipo de dato en operación condicional debe ser boolean.'
-        self.IF_BOOLEAN = 'El tipo de dato dentro de condición de IF debe ser boolean.'
-        self.WHILE_BOOLEAN = 'El tipo de dato dentro de condición de WHILE debe ser boolean.'
-        self.ASIGNACION = 'La asignación de dos valores deben ser del mismo tipo.'
-        self.RETURN_TYPE = 'El valor de retorno debe de ser del mismo tipo con que fue declarado el método.'
+        self.TIPO_PARAMETROS_METODO = 'El typeValue de dato en los argumentos en la llamada al método no coincide.'
+        self.EQ_OPS = 'El typeValue de dato de operandos no es el mismo para los operadores "==" y "!=".'
+        self.ARITH_OP = 'El typeValue de dato de operando debe ser INT para operadores aritméticos.'
+        self.REL_OP = 'El typeValue de dato de operando debe ser INT para operadores de relación.'
+        self.COND_OP = 'El typeValue de dato en operación condicional debe ser boolean.'
+        self.IF_BOOLEAN = 'El typeValue de dato dentro de condición de IF debe ser boolean.'
+        self.WHILE_BOOLEAN = 'El typeValue de dato dentro de condición de WHILE debe ser boolean.'
+        self.ASIGNACION = 'La asignación de dos valores deben ser del mismo typeValue.'
+        self.RETURN_TYPE = 'El valor de retorno debe de ser del mismo typeValue con que fue declarado el método.'
         self.RETURN_VOID = 'Un método declarado VOID no puede retornar ningún valor.'
-        self.MUST_STRUCT = 'El tipo de dato de la variable debe ser STRUCT.'
+        self.MUST_STRUCT = 'El typeValue de dato de la variable debe ser STRUCT.'
         self.METHOD_NOT_DECLARED = 'El método no existe o no hay definición del método previamente a ser invocado.'
         self.SHADOW_PARAMETER = 'No es posible declarar una variable con el nombre de un parámetro.'
 

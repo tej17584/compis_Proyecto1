@@ -38,22 +38,22 @@ class MainWindow(QMainWindow):
 
         # Initialize tab screen
         self.tabs = QTabWidget()
-        self.tab1 = QWidget()
-        self.tab2 = QWidget()
+        self.windowEditor = QWidget()
+        self.windowResults = QWidget()
 
         # # Add tabs
-        self.tabs.addTab(self.tab1, "Text Editor")
-        self.tabs.addTab(self.tab2, "Results")
+        self.tabs.addTab(self.windowEditor, "Text Editor")
+        self.tabs.addTab(self.windowResults, "Results")
 
         # creating a QPlainTextEdit object
         self.editor = QPlainTextEdit()
 
-        self.showErrors = QLabel()
-        self.showErrors.setFont(fixedfont)
-        self.showErrors.setText("")
-        self.tab2.layout = QVBoxLayout()
-        self.tab2.layout.addWidget(self.showErrors)
-        self.tab2.setLayout(self.tab2.layout)
+        self.errorForLog = QLabel()
+        self.errorForLog.setFont(fixedfont)
+        self.errorForLog.setText("")
+        self.windowResults.layout = QVBoxLayout()
+        self.windowResults.layout.addWidget(self.errorForLog)
+        self.windowResults.setLayout(self.windowResults.layout)
 
         self.editor.setFont(fixedfont)
 
@@ -64,9 +64,9 @@ class MainWindow(QMainWindow):
         # adding editor to the layout
         mainlayout.addWidget(self.tabs)
         # layout.addWidget(self.editor)
-        self.tab1.layout = QVBoxLayout()
-        self.tab1.layout.addWidget(self.editor)
-        self.tab1.setLayout(self.tab1.layout)
+        self.windowEditor.layout = QVBoxLayout()
+        self.windowEditor.layout.addWidget(self.editor)
+        self.windowEditor.setLayout(self.windowEditor.layout)
 
         # creating a QWidget layout
         container = QWidget()
@@ -283,7 +283,9 @@ class MainWindow(QMainWindow):
         self._save_to_path(path)
 
     def compile(self):
-        print('COMPILANDO...')
+        """
+        Método para
+        """
         if self.path is None:
             return self.file_saveas()
         self._save_to_path(self.path)
@@ -291,20 +293,23 @@ class MainWindow(QMainWindow):
         input = self.path
 
         if self.editor.toPlainText() != '':
-            compilado = Compilar(input)
+            programaCompilado = Compilar(input)
 
-            if compilado.HasLexicalError():
-                print('tiene errores lexicos', compilado.myError.lexicalErrors)
-                errores = '\n'.join(compilado.myError.lexicalErrors)
-                self.showErrors.setText(errores)
+            if programaCompilado.HasLexicalError():
+                print('Se encontraron errores semánticos.\n ',
+                      programaCompilado.errorFromAntlr.lexicalErrors)
+                errores = '\n'.join(
+                    programaCompilado.errorFromAntlr.lexicalErrors)
+                self.errorForLog.setText(errores)
 
             else:
-                if compilado.printer.node_type[compilado.printer.root] == 'error' or len(compilado.printer.errores.errores) > 0:
-                    # print(compilado.printer.errores.GetErrores())
-                    errores = '\n'.join(compilado.printer.errores.GetErrores())
-                    self.showErrors.setText(errores)
+                if programaCompilado.printer.node_type[programaCompilado.printer.root] == 'error' or len(programaCompilado.printer.errores.errores) > 0:
+                    errores = '\n'.join(
+                        programaCompilado.printer.errores.GetErrores())
+                    self.errorForLog.setText(errores)
                 else:
-                    self.showErrors.setText('Sin errores :)')
+                    self.errorForLog.setText(
+                        'No se encontraron errores de análisis semántico.')
             self.tabs.setCurrentIndex(1)
 
     # save to path method
@@ -335,14 +340,14 @@ class MainWindow(QMainWindow):
             # update the title
             self.update_title()
 
+    def edit_toggle_wrap(self):
+        self.editor.setLineWrapMode(
+            1 if self.editor.lineWrapMode() == 0 else 0)
+
     # update title method
     def update_title(self):
         self.setWindowTitle("%s" % (os.path.basename(self.path)
                                     if self.path else "Untitled"))
-
-    def edit_toggle_wrap(self):
-        self.editor.setLineWrapMode(
-            1 if self.editor.lineWrapMode() == 0 else 0)
 
 
 if __name__ == '__main__':

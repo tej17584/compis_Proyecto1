@@ -28,11 +28,13 @@ class MyErrorListener(ErrorListener):
     def __init__(self):
         self.hasErrors = False
         self.lexicalErrors = []
+        super(MyErrorListener, self).__init__()
         pass
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
         self.hasErrors = True
-        errorMsg = f' => Line {line}:{column} {msg}'
+        errorMsg = str(line) + ":" + str(column) + \
+            ": sintaxis ERROR encontrado " + str(msg)
         self.lexicalErrors.append(errorMsg)
 
     def getHasError(self):
@@ -59,11 +61,11 @@ class DecafPrinter(decafAlejandroListener):
 
         self.ambitos = []
         self.current_scope = None
-        self.tabla_tipos = TablaTipos()
+        self.tabla_tipos = dictTableVars()
         self.errores = SemanticError()
-        self.tabla_methods = TablaMetodos()
-        self.tabla_struct = TablaStruct()
-        self.tabla_parameters = TablaParametros()
+        self.tabla_methods = dictTableMetods()
+        self.tabla_struct = dictTableStruct()
+        self.tabla_parameters = tableDictParameters()
 
         self.node_type = {}
 
@@ -75,7 +77,7 @@ class DecafPrinter(decafAlejandroListener):
 
     def NewScope(self):
         self.ambitos.append(self.current_scope)
-        self.current_scope = TablaSimbolos()
+        self.current_scope = generalSymbolTable()
 
     def Find(self, var):
         lookup = self.current_scope.LookUp(var)
@@ -107,7 +109,7 @@ class DecafPrinter(decafAlejandroListener):
     def enterProgram(self, ctx: decafAlejandroParser.ProgramContext):
         print('---------- INICIO --------------')
         self.root = ctx
-        self.current_scope = TablaSimbolos()
+        self.current_scope = generalSymbolTable()
 
     def enterMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
         method = ctx.method_name().getText()
@@ -1081,19 +1083,19 @@ class Compilar():
         lexer = decafAlejandroLexer(input)
         stream = CommonTokenStream(lexer)
         parser = decafAlejandroParser(stream)
-        self.myError = MyErrorListener()
+        self.errorFromAntlr = MyErrorListener()
         parser.removeErrorListeners()
-        parser.addErrorListener(self.myError)
+        parser.addErrorListener(self.errorFromAntlr)
         tree = parser.program()
 
-        # print('HAS ERROR?', self.myError.getHasError())
-        if not self.myError.getHasError():
+        # print('HAS ERROR?', self.errorFromAntlr.getHasError())
+        if not self.errorFromAntlr.getHasError():
             self.printer = DecafPrinter()
             walker = ParseTreeWalker()
             walker.walk(self.printer, tree)
 
     def HasLexicalError(self):
-        return self.myError.getHasError()
+        return self.errorFromAntlr.getHasError()
 
 
 comp = Compilar('Python3/programs/multiple_tests.decaf')

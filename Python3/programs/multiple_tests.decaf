@@ -38,6 +38,7 @@ class Program {
 		int i;
 		int j;
 		int k;
+		char patito;
 
 		i = 0;
 		j=0;
