@@ -1029,7 +1029,6 @@ class DecafPrinter(decafAlejandroListener):
                         ctx.array_id().location(), tipo_id['Tipo'], tipo_id['Description'])
                     self.node_type[ctx] = result_type
 
-
                 # Hijo derecho
                     if ctx.array_id().int_literal() is not None:
                         if 'array' not in tipo_id['Tipo']:
@@ -1047,7 +1046,6 @@ class DecafPrinter(decafAlejandroListener):
                     if ctx.array_id() in self.node_type.keys():
                         if self.node_type[ctx.array_id()] == self.ERROR:
                             self.node_type[ctx] = self.ERROR
-
 
     def exitLocation(self, ctx: decafAlejandroParser.LocationContext):
         if ctx not in self.node_type.keys():
