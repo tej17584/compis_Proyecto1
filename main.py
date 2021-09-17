@@ -226,7 +226,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                     line = ctx.var_type().start.line
                     col = ctx.var_type().start.column
                     self.errores.AddEntryToTable(
-                        line, col, f'El tipo {tipo} no ha sido declarado previamente.')
+                        line, col, f'El tipo {tipo} de variable no ha sido declarado previamente..')
                     self.tipoNodo[ctx] = self.ERROR
                     self.tipoNodo[ctx.field_var()] = self.ERROR
                     return
@@ -260,7 +260,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                     line = ctx.var_type().start.line
                     col = ctx.var_type().start.column
                     self.errores.AddEntryToTable(
-                        line, col, f'El tipo {tipo} no ha sido declarado previamente.')
+                        line, col, f'El tipo {tipo} de variable no ha sido declarado previamente.')
                     self.tipoNodo[ctx] = self.ERROR
                     self.tipoNodo[ctx.field_var()] = self.ERROR
                     return
@@ -380,7 +380,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                     line = ctx.start.line
                     col = ctx.start.column
                     self.errores.AddEntryToTable(
-                        line, col, f'Variable "{id}" debe ser un array.')
+                        line, col, f'Variable "{id}" debe ser del tipo ARRAY.')
                     self.tipoNodo[ctx] = self.ERROR
             elif ctx.var_id() is not None:
                 tipo = variable['Tipo']
@@ -494,7 +494,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
             line = ctx.method_name().start.line
             col = ctx.method_name().start.column
             self.errores.AddEntryToTable(
-                line, col, f'El método "{name}" no existe o no hay definición del método previamente a ser invocado.')
+                line, col, f'El método "{name}" no existe o no ha sido declarado antes del scope actual.')
             return
 
         if len(parameters) != len(method_info['Parameters']):
@@ -770,7 +770,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                 line = ctx.start.line
                 col = ctx.start.column
                 self.errores.AddEntryToTable(
-                    line, col, f'Variable "{id}" debe ser un array.')
+                    line, col, f'Variable "{id}" debe ser del tipo ARRAY.')
                 self.tipoNodo[ctx] = self.ERROR
         elif ctx.var_id() is not None:
             # tipo_var = self.findVar(ctx.var_id().getText())
@@ -792,19 +792,19 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                 line = ctx.start.line
                 col = ctx.start.column
                 self.errores.AddEntryToTable(
-                    line, col, f'Variable "{ctx.var_id().getText()}" debe ser INT para acceder a un array.')
+                    line, col, f'Variable "{ctx.var_id().getText()}" debe ser INT para intetar acceder a un ARRAY.')
                 self.tipoNodo[ctx] = self.ERROR
             elif 'array' not in tipo:
                 line = ctx.start.line
                 col = ctx.start.column
                 self.errores.AddEntryToTable(
-                    line, col, f'Variable "{id}" debe ser un array.')
+                    line, col, f'Variable "{id}" debe ser del tipo ARRAY.')
                 self.tipoNodo[ctx] = self.ERROR
             elif tipo_var['Tipo'] != self.INT:
                 line = ctx.start.line
                 col = ctx.start.column
                 self.errores.AddEntryToTable(
-                    line, col, f'Variable "{ctx.var_id().getText()}" debe ser INT para acceder a un array.')
+                    line, col, f'Variable "{ctx.var_id().getText()}" debe ser INT para intetar acceder a un ARRAY.')
                 self.tipoNodo[ctx] = self.ERROR
 
     def IterateChildren(self, location, parent_type, description):
@@ -909,7 +909,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                                     line = location.array_id().start.line
                                     col = location.array_id().start.column
                                     self.errores.AddEntryToTable(
-                                        line, col, f'Variable "{id}" debe ser un array.')  # ATENCION
+                                        line, col, f'Variable "{id}" debe ser del tipo ARRAY.')  # ATENCION
                                     self.tipoNodo[location] = self.ERROR
                                 else:
                                     self.tipoNodo[location] = child['Tipo'].split(
@@ -1025,7 +1025,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                         line = ctx.start.line
                         col = ctx.start.column
                         self.errores.AddEntryToTable(
-                            line, col, f'Variable "{ctx.var_id().getChild(0).getText()}" debe ser un array.')
+                            line, col, f'Variable "{ctx.var_id().getChild(0).getText()}" debe ser un del tipo ARRAY.')
                         self.tipoNodo[ctx] = self.ERROR
                         return
                     result_type = self.IterateChildren(
