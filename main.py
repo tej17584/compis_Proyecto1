@@ -67,41 +67,58 @@ class DecafAlejandroPrinter(decafAlejandroListener):
         self.tabla_estructuras = dictTableStruct()
         self.tabla_parametros = tableDictParameters()
 
-        self.tipoNodo = {}
+        self.tipoNodo = {}  # el tipo de nodo de cada valor que iteraremos
 
         super().__init__()
 
-    def PopScope(self):
+    def popScope(self):
         self.scope_Actual.valueToTable()
         self.scope_Actual = self.ambitos.pop()
 
-    def NewScope(self):
+    def addScope(self):
         self.ambitos.append(self.scope_Actual)
         self.scope_Actual = generalSymbolTable()
 
-    def Find(self, var):
-        lookup = self.scope_Actual.getSymbolFromTable(var)
-        if lookup == 0:
-            ambitos_reverse = self.ambitos.copy()
-            ambitos_reverse.reverse()
-            for scope in ambitos_reverse:
-                lookup2 = scope.getSymbolFromTable(var)
-                if lookup2 != 0:
-                    return lookup2
+    def findVar(self, variable):
+        """
+        *@param variable: busca la variable en el scope actual
+        """
+        innerArray = []
+        innerVar = self.scope_Actual.getSymbolFromTable(variable)
+        if innerVar == 0:
+            innerArray = self.ambitos.copy()
+            innerArray.reverse()
+            for scope in innerArray:
+                innerVar2 = scope.getSymbolFromTable(variable)
+                if innerVar2 != 0:
+                    return innerVar2
             return 0
         else:
-            return lookup
+            return innerVar
 
     def Intersection(self, a, b):
+        """
+        Realiza la interseccion de dos valores
+        """
         return [v for v in a if v in b]
 
     def all_equal(self, iterable):
+        """
+        Iterable es la variable que busca el valor
+        """
         g = groupby(iterable)
         return next(g, True) and not next(g, False)
 
     def ChildrenHasError(self, ctx):
+        """
+        REvisa que el hijo tenga errores. Retorna TRUE si hay o FALSE si no
+        *@param ctx: el contexto
+        """
         non_terminals = [self.tipoNodo[i] for i in ctx.children if type(
-            i) in [decafAlejandroParser.LocationContext, decafAlejandroParser.ExprContext, decafAlejandroParser.BlockContext, decafAlejandroParser.DeclarationContext]]
+            i) in [decafAlejandroParser.LocationContext,
+                   decafAlejandroParser.ExprContext,
+                   decafAlejandroParser.BlockContext,
+                   decafAlejandroParser.DeclarationContext]]
         if self.ERROR in non_terminals:
             return True
         return False
@@ -145,7 +162,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
             self.errores.AddEntryToTable(
                 line, col, self.errores.errrorText_VARDUPLICADA)
 
-        self.NewScope()
+        self.addScope()
 
         for parameter in parameters:
             type_symbol = self.tablaVariables.getSymbolFromTable(
@@ -158,7 +175,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
     def exitMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
         metodo = ctx.method_name().getText()
         self.tabla_parametros.cleanTable()
-        self.PopScope()
+        self.popScope()
 
         return_type = ctx.return_type().getText()
         block_type = self.tipoNodo[ctx.block()]
@@ -280,7 +297,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                     line, col, self.errores.errrorText_VARDUPLICADA)
 
     def enterStruct_declr(self, cstx: decafAlejandroParser.Struct_declrContext):
-        self.NewScope()
+        self.addScope()
 
     def exitStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
         tipo = ctx.getChild(0).getText() + ctx.getChild(1).getText()
@@ -291,7 +308,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                 tipo, size_scope, self.tablaVariables.STRUCT)
             self.tabla_estructuras.ExtractInfo(
                 tipo, self.scope_Actual, self.tablaVariables)
-            self.PopScope()
+            self.popScope()
 
             self.tipoNodo[ctx] = self.VOID
             for child in ctx.children:
@@ -318,7 +335,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
 
         # if ctx.getChildCount() == 1:
         id = ctx.getText()
-        variable = self.Find(id)
+        variable = self.findVar(id)
         if variable == 0:
             line = ctx.start.line
             col = ctx.start.column
@@ -343,7 +360,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
             return
 
         id = ctx.getChild(0).getText()
-        variable = self.Find(id)
+        variable = self.findVar(id)
         if variable == 0:
             line = ctx.start.line
             col = ctx.start.column
@@ -367,7 +384,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                     self.tipoNodo[ctx] = self.ERROR
             elif ctx.var_id() is not None:
                 tipo = variable['Tipo']
-                tipo_var = self.Find(ctx.var_id().getText())
+                tipo_var = self.findVar(ctx.var_id().getText())
                 self.CheckErrorInArrayId(ctx, tipo, tipo_var)
 
     def exitVar_type(self, ctx: decafAlejandroParser.Var_typeContext):
@@ -433,13 +450,13 @@ class DecafAlejandroPrinter(decafAlejandroListener):
         parent = ctx.parentCtx
 
         if not isinstance(parent, decafAlejandroParser.Method_declrContext):
-            self.NewScope()
+            self.addScope()
 
     def exitBlock(self, ctx: decafAlejandroParser.BlockContext):
         parent = ctx.parentCtx
 
         if not isinstance(parent, decafAlejandroParser.Method_declrContext):
-            self.PopScope()
+            self.popScope()
 
         for child in ctx.children:
             if not isinstance(child, TerminalNode):
@@ -739,7 +756,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
 
     def CheckErrorInArrayId(self, ctx, tipo, tipo_var):
         id = ctx.getChild(0).getText()
-        # variable = self.Find(id)
+        # variable = self.findVar(id)
         # tipo = variable['Tipo']
 
         if ctx.int_literal() is not None:
@@ -756,7 +773,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                     line, col, f'Variable "{id}" debe ser un array.')
                 self.tipoNodo[ctx] = self.ERROR
         elif ctx.var_id() is not None:
-            # tipo_var = self.Find(ctx.var_id().getText())
+            # tipo_var = self.findVar(ctx.var_id().getText())
             if tipo_var == 0:
                 line = ctx.start.line
                 col = ctx.start.column
@@ -899,7 +916,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                                         'array')[-1]
                             elif location.array_id().var_id() is not None:
                                 tipo = child['Tipo']
-                                tipo_var = self.Find(
+                                tipo_var = self.findVar(
                                     location.array_id().var_id().getText())
                                 self.CheckErrorInArrayId(
                                     location.array_id(), tipo, tipo_var)
@@ -950,7 +967,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                             self.tipoNodo[location] = self.ERROR
                     elif location.array_id().var_id() is not None:
                         tipo = child['Tipo']
-                        tipo_var = self.Find(
+                        tipo_var = self.findVar(
                             location.array_id().var_id().getText())
                         self.CheckErrorInArrayId(
                             location.array_id(), tipo, tipo_var)
@@ -993,7 +1010,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                 id = ctx.var_id().getChild(0).getText()
                 # self.scope_Actual.valueToTable()
 
-                symbol = self.Find(id)
+                symbol = self.findVar(id)
                 if symbol == 0:
                     line = ctx.start.line
                     col = ctx.start.column
@@ -1018,7 +1035,7 @@ class DecafAlejandroPrinter(decafAlejandroListener):
         if ctx.array_id() is not None:
             if ctx.array_id().location() is not None:
                 id = ctx.array_id().getChild(0).getText()
-                symbol = self.Find(id)
+                symbol = self.findVar(id)
                 if symbol == 0:
                     line = ctx.start.line
                     col = ctx.start.column
@@ -1042,7 +1059,8 @@ class DecafAlejandroPrinter(decafAlejandroListener):
                             self.tipoNodo[ctx] = self.ERROR
                     elif ctx.array_id().var_id() is not None:
                         tipo = tipo_id['Tipo']
-                        tipo_var = self.Find(ctx.array_id().var_id().getText())
+                        tipo_var = self.findVar(
+                            ctx.array_id().var_id().getText())
                         self.CheckErrorInArrayId(
                             ctx.array_id(), tipo, tipo_var)
 
