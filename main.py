@@ -107,7 +107,7 @@ class DecafPrinter(decafAlejandroListener):
         return False
 
     def enterProgram(self, ctx: decafAlejandroParser.ProgramContext):
-        print('---------- INICIO --------------')
+        print('----------> INICIO COMPILACION <--------------')
         self.root = ctx
         self.current_scope = generalSymbolTable()
 
@@ -120,7 +120,6 @@ class DecafPrinter(decafAlejandroListener):
                 tipo = ctx.return_type().var_type().getText()
             else:
                 tipo = ctx.return_type().getText()
-            print('Entrando a metodo', metodo)
             hijos = ctx.getChildCount()
 
             for i in range(hijos):
@@ -160,7 +159,6 @@ class DecafPrinter(decafAlejandroListener):
         metodo = ctx.method_name().getText()
         self.tabla_parameters.cleanTable()
         self.PopScope()
-        print('Saliendo metodo', metodo)
 
         return_type = ctx.return_type().getText()
         block_type = self.node_type[ctx.block()]
@@ -519,17 +517,10 @@ class DecafPrinter(decafAlejandroListener):
         nodo = ctx.parentCtx
         hijos = [str(type(i))
                  for i in nodo.children if not isinstance(i, TerminalNode)]
-        # print('GET METHOD', type(nodo), nodo.getChildCount())
-        # print('get metodo type:', [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)], str(decafAlejandroParser.Return_typeContext), str(decafAlejandroParser.Return_typeContext) in [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)])
         while str(decafAlejandroParser.Return_typeContext) not in hijos:
             nodo = nodo.parentCtx
             hijos = [str(type(i))
                      for i in nodo.children if not isinstance(i, TerminalNode)]
-            # if isinstance(nodo, decafAlejandroParser.StatementContext):
-            #     nodo = ctx.parentCtx.
-            # print('GET METHOD', type(nodo), nodo.getChildCount())
-            # print('get metodo type:', [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)], str(decafAlejandroParser.Return_typeContext), str(decafAlejandroParser.Return_typeContext) in [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)])
-            # break
 
         if nodo.return_type().var_type() is not None:
             return nodo.return_type().var_type().getText()
@@ -832,8 +823,6 @@ class DecafPrinter(decafAlejandroListener):
 
                 return tipo_retorno
 
-            print(
-                '----------------------------------------------------------------------------------------')
             id = location.var_id().getChild(0).getText()
             tipo_nodo = None
             child_type = None
@@ -926,8 +915,6 @@ class DecafPrinter(decafAlejandroListener):
                         self.node_type[location] = self.ERROR
                 return tipo_retorno
 
-            print(
-                '----------------------------------------------------------------------------------------')
             id = location.array_id().getChild(0).getText()
             tipo_nodo = None
             child_type = None
@@ -1000,7 +987,6 @@ class DecafPrinter(decafAlejandroListener):
 
         if ctx.var_id() is not None:
             if ctx.var_id().location() is not None:
-                print('------------ LOCATION ENTRADA -------------------')
                 id = ctx.var_id().getChild(0).getText()
                 # self.current_scope.valueToTable()
 
@@ -1014,7 +1000,7 @@ class DecafPrinter(decafAlejandroListener):
                 else:
                     tipo_id = self.tabla_tipos.getSymbolFromTable(
                         symbol['Tipo'])
-                    print('TIPO VARIABLE', tipo_id)
+                    print('Tipo de variable', tipo_id)
                     if 'array' in tipo_id['Tipo']:
                         line = ctx.start.line
                         col = ctx.start.column
@@ -1025,12 +1011,9 @@ class DecafPrinter(decafAlejandroListener):
                     result_type = self.IterateChildren(
                         ctx.var_id().location(), tipo_id['Tipo'], tipo_id['Description'])
                     self.node_type[ctx] = result_type
-                    print(
-                        '------------ LOCATION SALIDA -------------------', result_type)
 
         if ctx.array_id() is not None:
             if ctx.array_id().location() is not None:
-                print('------------ LOCATION ENTRADA -------------------')
                 id = ctx.array_id().getChild(0).getText()
                 symbol = self.Find(id)
                 if symbol == 0:
@@ -1042,15 +1025,12 @@ class DecafPrinter(decafAlejandroListener):
                 else:
                     tipo_id = self.tabla_tipos.getSymbolFromTable(
                         symbol['Tipo'])
-                    # print('ARRAY ID ENTER LOCATION', id, tipo_id)
                     result_type = self.IterateChildren(
                         ctx.array_id().location(), tipo_id['Tipo'], tipo_id['Description'])
                     self.node_type[ctx] = result_type
 
-                # HIJO IZQUIERDO
-                # tipo_nodo = self.tabla_tipos.getSymbolFromTable(tipo_id['Tipo'])
 
-                # HIJO DERECHO
+                # Hijo derecho
                     if ctx.array_id().int_literal() is not None:
                         if 'array' not in tipo_id['Tipo']:
                             line = ctx.array_id().start.line
@@ -1068,8 +1048,6 @@ class DecafPrinter(decafAlejandroListener):
                         if self.node_type[ctx.array_id()] == self.ERROR:
                             self.node_type[ctx] = self.ERROR
 
-                    print(
-                        '------------ LOCATION SALIDA -------------------', result_type)
 
     def exitLocation(self, ctx: decafAlejandroParser.LocationContext):
         if ctx not in self.node_type.keys():
@@ -1097,7 +1075,7 @@ class DecafPrinter(decafAlejandroListener):
                 0, 0, self.errores.errrorText_MAIN_NOT_EXHISTS)
 
         self.current_scope.valueToTable()
-        print('---------- FIN --------------')
+        print('----------> FIN PROGRAMA <--------------')
 
         self.tabla_methods.valueToTable()
         self.tabla_struct.valueToTable()
