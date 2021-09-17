@@ -14,7 +14,7 @@ from PyQt5.QtCore import *
 import os
 import sys
 
-from mainV2 import Compilar
+from main import Compilar
 
 
 # Creating main window class
@@ -42,8 +42,8 @@ class MainWindow(QMainWindow):
         self.windowResults = QWidget()
 
         # # AddEntryToTable tabs
-        self.tabs.addTab(self.windowEditor, "Text Editor")
-        self.tabs.addTab(self.windowResults, "Results")
+        self.tabs.addTab(self.windowEditor, "Editor de código")
+        self.tabs.addTab(self.windowResults, "Análisis semántico")
 
         # creating a QPlainTextEdit object
         self.editor = QPlainTextEdit()
@@ -57,7 +57,7 @@ class MainWindow(QMainWindow):
 
         self.editor.setFont(fixedfont)
 
-        # self.path holds the path of the currently open file.
+        # self.path holds the path of the currently Abrir archivo.
         # If none, we haven't got a file open yet (or creating new).
         self.path = None
 
@@ -90,37 +90,37 @@ class MainWindow(QMainWindow):
         self.addToolBar(file_toolbar)
 
         # creating actions to add in the file menu
-        # creating a open file action
-        open_file_action = QAction("Open file", self)
+        # creating a Abrir archivo action
+        open_file_action = QAction("Abrir archivo", self)
 
         # setting status tip
-        open_file_action.setStatusTip("Open file")
+        open_file_action.setStatusTip("Abrir archivo")
 
-        # adding action to the open file
+        # adding action to the Abrir archivo
         open_file_action.triggered.connect(self.file_open)
 
         # adding this to tool bar
         file_toolbar.addAction(open_file_action)
 
         # similarly creating a save action
-        save_file_action = QAction("Save", self)
-        save_file_action.setStatusTip("Save current page")
+        save_file_action = QAction("Guardar", self)
+        save_file_action.setStatusTip("Guardar página actual")
         save_file_action.triggered.connect(self.file_save)
         file_toolbar.addAction(save_file_action)
 
         # similarly creating save action
-        saveas_file_action = QAction("Save As", self)
+        saveas_file_action = QAction("Guardar como", self)
         saveas_file_action.setStatusTip("Save current page to specified file")
         saveas_file_action.triggered.connect(self.file_saveas)
         file_toolbar.addAction(saveas_file_action)
 
-        compile_action = QAction("Compile", self)
-        compile_action.setStatusTip("Compile current program")
-        compile_action.triggered.connect(self.compile)
+        compile_action = QAction("Compilar", self)
+        compile_action.setStatusTip("Compilar programa actual")
+        compile_action.triggered.connect(self.compilarFile)
         file_toolbar.addAction(compile_action)
 
         # creating another tool bar for editing text
-        edit_toolbar = QToolBar("Edit")
+        edit_toolbar = QToolBar("Editar")
 
         # adding this tool bar to the main window
         self.addToolBar(edit_toolbar)
@@ -128,9 +128,9 @@ class MainWindow(QMainWindow):
         # adding actions to the tool bar and menu bar
 
         # undo action
-        undo_action = QAction("Undo", self)
+        undo_action = QAction("Deshacer", self)
         # adding status tip
-        undo_action.setStatusTip("Undo last change")
+        undo_action.setStatusTip("Deshacer último cambio")
 
         # when triggered undo the editor
         undo_action.triggered.connect(self.editor.undo)
@@ -139,8 +139,8 @@ class MainWindow(QMainWindow):
         edit_toolbar.addAction(undo_action)
 
         # redo action
-        redo_action = QAction("Redo", self)
-        redo_action.setStatusTip("Redo last change")
+        redo_action = QAction("Rehacer", self)
+        redo_action.setStatusTip("Rehacer ultimo cambio")
 
         # when triggered redo the editor
         redo_action.triggered.connect(self.editor.redo)
@@ -149,8 +149,8 @@ class MainWindow(QMainWindow):
         edit_toolbar.addAction(redo_action)
 
         # cut action
-        cut_action = QAction("Cut", self)
-        cut_action.setStatusTip("Cut selected text")
+        cut_action = QAction("Cortar", self)
+        cut_action.setStatusTip("Cortar texto seleccionado")
 
         # when triggered cut the editor text
         cut_action.triggered.connect(self.editor.cut)
@@ -159,8 +159,8 @@ class MainWindow(QMainWindow):
         edit_toolbar.addAction(cut_action)
 
         # copy action
-        copy_action = QAction("Copy", self)
-        copy_action.setStatusTip("Copy selected text")
+        copy_action = QAction("Copiar", self)
+        copy_action.setStatusTip("Copiar texto seleccionado")
 
         # when triggered copy the editor text
         copy_action.triggered.connect(self.editor.copy)
@@ -169,8 +169,8 @@ class MainWindow(QMainWindow):
         edit_toolbar.addAction(copy_action)
 
         # paste action
-        paste_action = QAction("Paste", self)
-        paste_action.setStatusTip("Paste from clipboard")
+        paste_action = QAction("Pegar", self)
+        paste_action.setStatusTip("Pegar de portapapeles")
 
         # when triggered paste the copied text
         paste_action.triggered.connect(self.editor.paste)
@@ -179,8 +179,8 @@ class MainWindow(QMainWindow):
         edit_toolbar.addAction(paste_action)
 
         # select all action
-        select_action = QAction("Select all", self)
-        select_action.setStatusTip("Select all text")
+        select_action = QAction("Seleccionar todo", self)
+        select_action.setStatusTip("Seleccionar todo el texto")
 
         # when this triggered select the whole text
         select_action.triggered.connect(self.editor.selectAll)
@@ -227,7 +227,7 @@ class MainWindow(QMainWindow):
     def file_open(self):
 
         # getting path and bool value
-        path, _ = QFileDialog.getOpenFileName(self, "Open file", "",
+        path, _ = QFileDialog.getOpenFileName(self, "Abrir archivo", "",
                                               "Decaf (*.decaf)")
 
         # if path is true
@@ -270,7 +270,7 @@ class MainWindow(QMainWindow):
     def file_saveas(self):
 
         # opening path
-        path, _ = QFileDialog.getSaveFileName(self, "Save file", "",
+        path, _ = QFileDialog.getSaveFileName(self, "Guardar archivo", "",
                                               "Text documents (*.txt);All files (*.*)")
 
         # if dialog is cancelled i.e no path is selected
@@ -282,7 +282,7 @@ class MainWindow(QMainWindow):
         # else call save to path method
         self._save_to_path(path)
 
-    def compile(self):
+    def compilarFile(self):
         """
         Método para
         """

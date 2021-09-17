@@ -43,7 +43,7 @@ class Program {
 		i = 0;
 		j=34;
 		z.a = 3;
-		patito = True;
+		patito = "asdf";
 
 		while(i<=10)
 		{
