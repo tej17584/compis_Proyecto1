@@ -1099,15 +1099,9 @@ class DecafAlejandroPrinter(decafAlejandroListener):
         self.tabla_metodos.valueToTable()
         self.tabla_estructuras.valueToTable()
 
-        # for i, j in self.tipoNodo.items():
-        #     if isinstance(i, decafAlejandroParser.BlockContext):
-        #         print(i, j)
-
-
 class Compilar():
     def __init__(self, url):
         self.printer = None
-
         input = FileStream(url)
         lexer = decafAlejandroLexer(input)
         stream = CommonTokenStream(lexer)
@@ -1117,7 +1111,6 @@ class Compilar():
         parser.addErrorListener(self.errorFromAntlr)
         tree = parser.program()
 
-        # print('HAS ERROR?', self.errorFromAntlr.getHasError())
         if not self.errorFromAntlr.getHasError():
             self.printer = DecafAlejandroPrinter()
             walker = ParseTreeWalker()
