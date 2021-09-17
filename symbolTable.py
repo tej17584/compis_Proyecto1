@@ -2,344 +2,291 @@
 Nombre: Alejandro Tejada
 Curso: Diseño Compiladores
 Fecha: agosto 2021
-Programa: tablaSimbolos.py
-Propósito: Este programa alojara a 3 clases, cada una será una tabla de simbolos.
-Asi como diccionarios y métodos globales para saber lo que se espera de cada una
-V 1.0
+Programa: tablaSimbolosv2.py
+Propósito: Este programa alojará 3 clases para cada tabla. Este es una nueva version del codigo
+de las tablas de símbolos.
+V 2.0
 """
-
-# ZONA DE IMPORTS
+# zona de imports
+from prettytable import PrettyTable
 from antlr4.tree.Tree import Tree
 from funciones import *
 import sys
 import json
 
 
-class symbolTables():
-    def __init__(self) -> None:
-        # {1 : ["a", int", "main", 0, 0 ], "b": ["string", "y", "global", 0,0]}
-        self.dictVars = {}
-        # {1 : ["A", "a", "int" ], 2: ["B", "variable", "int"]}
-        self.dictStructs = {}
-        # {1: :["main", "void", ["param1", "param2"], [True]]}
-        self.dictMethods = {}
-        self.functions = funciones()  # funciones necesarias y varias
-        self.contadorGlobalDictVars = 0
-        self.contadorGlobalDictMethods = 0
-        self.contadorGlobalDictStructs = 0
+class generalSymbolTable():
+    def __init__(self):
+        """
+        Init de los métodos de la tabla de simbolos
+        """
+        self.dictSimbolos = []  # diccionario para los simbolos
+        self.offsetVariables = 0  # ofsset de variables y de valores
+        self.pretty_table = PrettyTable()  # instancia de pretty table
 
-    # ! ------------------------- METODOS DE DICCIONARIO DE METODOS ---------
-    def getDictVar(self):
-        """
-        Retorna el diccionario de variables
-        """
-        return self.dictVars
+        #print(' -- Nuevo SCOPE --')
 
-    def getVarIDVarDictVar(self, varID, scope):
+    def AddEntryToTable(self, typeValue, idValue, size, offset, isParameter):
         """
-        Dada un varID, retorna el nombre de la variable si existe en la tabla de variables.
-        *@param: varID: el id de la variable a checar el tipo
-        *@param: scope: el scope actual
+        Agrega un valor a la tabla de simbolos general
+        *@param: typeValue: el tipo de valor
+        *@param: scope: el valor del id
+        *@param: size: el size de ese valor
+        *@param: offset: el offset de ese valor
+        *@param: isParameter: bool para el parametro
         """
-        for numeroTupla, valorTupla in self.dictVars.items():
-            if(valorTupla[0] == varID and (str(scope) == valorTupla[2])):
-                return valorTupla[0]  # retornamos el nombre de la tabla
+        self.dictSimbolos.append({'Tipo': typeValue, 'Id': idValue, 'Size': size, 'Offset': offset, 'IsParameter': isParameter
+                                  })
+        self.offsetVariables += size
 
-        return ""
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado o 0
+        *@param: variable: el id del valor
+        """
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
+            if symbol['Id'] == variable:
+                return symbol
 
-    def getTypeVarDictVar(self, varID, scope):
-        """
-        Dada un varID, retorna el tipo si existe en la tabla de variables.
-        *@param: varID: el id de la variable a checar el tipo
-        *@param: scope: el scope actual
-        """
-        for numeroTupla, valorTupla in self.dictVars.items():
-            if((str(varID) == str(valorTupla[0])) and (str(scope) == valorTupla[2])):
-                return valorTupla[1]  # retornamos el tipo de la tabla
+        return 0
 
-        return ""
+    def getSize(self):
+        """
+        Retorna el tamaño de la tabla
+        """
+        return sum(symbol['Size'] for symbol in self.dictSimbolos)
 
-    def getScopeVarDictVar(self, varID):
+    def valueToTable(self):
         """
-        Dada un varID, retorna el valor si existe en la tabla de variables.
-        *@param: varID: el id de la variable a checar
+        transforma un array o valor a tabla
         """
-        for numeroTupla, valorTupla in self.dictVars.items():
-            if(valorTupla[0] == varID):
-                return valorTupla[2]  # retornamos el scope de la tabla
+        self.pretty_table.field_names = [
+            'Tipo', 'ID', 'Size', 'Offset', 'IsParameter']
+        for i in self.dictSimbolos:
+            self.pretty_table.add_row(list(i.values()))
+        """ 
+        print(' --- Tabla simbolos generales ---
+        print(self.pretty_table) """
+        self.pretty_table.clear_rows()
 
-        return ""
 
-    def getValorVarDictVar(self, varID, scope):
+class tableDictParameters():
+    def __init__(self):
         """
-        Dada un varID, retorna el valor si existe en la tabla de variables.
-        *@param: varID: el id de la variable a checar
-        *@param: scope: el scope actual
+        Init de la tabla de parámetros
         """
-        for numeroTupla, valorTupla in self.dictVars.items():
-            if((str(varID) == str(valorTupla[0])) and (str(scope) == valorTupla[2])):
-                return valorTupla[3]  # retornamos el valor de la tabla
-        return ""
+        self.pretty_table = PrettyTable()
+        self.dictSimbolos = []
+        #print(' -- INICIANDO NUEVO AMBITO --')
 
-    def getOffsetVarDictVar(self, varID, scope):
+    def AddEntryToTable(self, typeValue, idValue):
         """
-        Dada un varID, retorna el valor si existe en la tabla de variables.
-        *@param: varID: el id de la variable a checar
-        *@param: scope: el scope actual
+        Agregamos una entrada a la tabla de parámetros
+        *@param: typeValue: el tipo de valor
+        *@param: idValue: el id del valor
         """
-        for numeroTupla, valorTupla in self.dictVars.items():
-            if((str(varID) == str(valorTupla[0])) and (str(scope) == valorTupla[2])):
-                return valorTupla[4]  # retornamos el offset de la tabla
+        self.dictSimbolos.append({
+            'Tipo': typeValue,
+            'Id': idValue,
+        })
 
-        return ""
+    def getSymbolFromTable(self, variable):
+        """
+        Retorna el valor pasado
+        *@param: variable: el id del valor
+        """
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
+            if symbol['Id'] == variable:
+                return symbol
+        return 0
 
-    def AddNewVar_DictVar(self, varID="", varType="", methodID="", valor=0, offset=0):
+    def valueToTable(self):
         """
-        Agrega una nueva tupla a la tabla de simbolos de la tabla de VARIABLES
-        *@param: varID: el nombre de la variable
-        *@param: varType: el tipo de la variable
-        *@param: methodID: el método  o scope al que pertenece de la variable
-        *@param: valor: el valor de la variable
-        *@param: offset: el offset de la variable
+        transforma un array o valor a tabla
         """
-        existsEntry = self.checkVarInVarSymbolTableV2(varID, methodID)
-        # colocamos en el orden especificado
-        arraynuevo = [varID, varType, methodID, valor, offset]
-        # si la entrada NO existe
-        if(existsEntry == False):
-            # agregamos una nueva entrada al diccionario
-            self.dictVars[self.contadorGlobalDictVars] = arraynuevo
-            self.contadorGlobalDictVars += 1
-        else:
-            print("Error a nivel de tabla de simbolos. La entrada ya existe.")
+        self.pretty_table.field_names = ['Tipo', 'ID']
+        for i in self.dictSimbolos:
+            self.pretty_table.add_row(list(i.values()))
 
-    def checkVarInVarSymbolTable(self, variable, scope):
-        """
-        Revisa si una variable dada EXISTE en la tabla de simbolos de variables
-        Si existe, retorna TRUE y el valor de esa variable. Si no, retorna False
-        *@param: variable: la variable a verificar en la tabla de simbolos
-        """
-        for numeroTupla, valorTupla in self.dictVars.items():
-            if(str(variable) == str(valorTupla[0])):
-                return True, self.getValorVarDictVar(variable, scope)
+        """ print(' --- Tabla parámetros ---')
+        print(self.pretty_table) """
+        self.pretty_table.clear_rows()
 
-        return False, ""
+    def cleanTable(self):
+        """
+        limpia una tabla, en este caso el dict de simbolos
+        """
+        self.valueToTable()
+        self.dictSimbolos = []
 
-    def checkVarInVarSymbolTableV2(self, variable, scope):
-        """
-        Revisa si una variable dada EXISTE en la tabla de simbolos de variables
-        Si existe, retorna TRUE. Si no, retorna False
-        *@param: variable: la variable a verificar en la tabla de simbolos
-        *@param: scope: elscope de la variable, ya que podemos tener dos distintas
-        """
-        existsDictVar = False
-        for numeroTupla, valorTupla in self.dictVars.items():
-            if((str(variable) == str(valorTupla[0])) and (str(scope) == valorTupla[2])):
-                existsDictVar = True
 
-        if((existsDictVar == True)):
-            return True
-        else:
-            return False
+class dictTableStruct():
+    def __init__(self):
+        """
+        init d ela tabla de estructuras
+        """
+        self.pretty_table = PrettyTable()
+        self.dictSimbolos = []
 
-    def varExistsRecursivo(self, nombre, scope, existe=False):
+    def AddEntryToTable(self, parent, typeValue, idValue, description):
         """
-        Revisa si una variable dada EXISTE en la tabla de simbolos de variables
-        Si existe, retorna TRUE. Si no, retorna False, RECURSIVO
-        *@param: nombre: la variable a verificar en la tabla de simbolos
-        *@param: scope: el scope de la variable, ya que podemos tener dos distintas
-        *@param: existe: si existe
+        Agrega un nuevo valor de estructura
+        *@param: parent: el padre de la struct
+        *@param: typeValue: el tipo
+        *@param: idValue: el id del valor
+        *@param: description: la descripcion o valor
         """
-        if(existe):
-            return True
-        if(len(self.dictVars) > 0):
-            for i in range(len(self.dictVars)):
-                valor = self.dictVars[i]
-                if(nombre == valor[0] and scope == valor[2]):
-                    existe = True
-            if self.checkMethodInMethodSymbolTableV2(scope) and existe == False:
-                nuevoScope = self.getPadreMethodDictMethods(scope)
-                if(nuevoScope != ''):
-                    return self.varExistsRecursivo(nombre, nuevoScope)
-        return existe
+        self.dictSimbolos.append({
+            'Parent': parent,
+            'Tipo': typeValue,
+            'Id': idValue,
+            'Description': description
+        })
 
-    def getVarInformationRecursivo(self, nombre, scope, existe=False, var=""):
+    def getSymbolFromTable(self, variable):
         """
-        Revisa si una variable dada EXISTE en la tabla de simbolos de variables
-        Si existe, retorna TRUE. Si no, retorna False, RECURSIVO
-        *@param: nombre: la variable a verificar en la tabla de simbolos
-        *@param: scope: el scope de la variable, ya que podemos tener dos distintas
-        *@param: existe: si existe
-        *@param: var: los valores de retorno
+        Retorna el valor pasado
+        *@param: variable: el id del valor
         """
-        if(existe):
-            return var
-        if(len(self.dictVars) > 0):
-            for i in range(len(self.dictVars)):
-                valor = self.dictVars[i]
-                if(nombre == valor[0] and scope == valor[2]):
-                    existe = True
-                    var = valor
-            if self.checkMethodInMethodSymbolTableV2(scope) and existe == False:
-                nuevoScope = self.getPadreMethodDictMethods(scope)
-                if(nuevoScope != ''):
-                    return self.getVarInformationRecursivo(nombre, nuevoScope)
-        return var
-        # ! ------------------------- METODOS DE DICCIONARIO DE METODOS ---------
+        innerArray = self.dictSimbolos.copy()
+        innerArray.reverse()
+        for symbol in innerArray:
+            if symbol['Id'] == variable:
+                return symbol
+        return 0
 
-    def getDictMethod(self):
+    def valueToTable(self):
         """
-        Retorna el diccionario de métodos
+        transforma un array o valor a tabla
         """
-        return self.dictMethods
+        self.pretty_table.field_names = ['Parent', 'Tipo', 'ID', 'Description']
+        for i in self.dictSimbolos:
+            self.pretty_table.add_row(list(i.values()))
 
-    def checkMethodInMethodSymbolTableV2(self, methodName):
-        """
-        Revisa si un método existe en la tabla de métodos,sino retonar FALSE. Sino TRUe
-        *@param: methodName: el nombre del método
-        """
-        existsMethod = False
-        for numeroTupla, valorTupla in self.dictMethods.items():
-            if(str(methodName) == str(valorTupla[1])):
-                existsMethod = True
+        """ print(' --- Diccionario estructuras ---')
+        print(self.pretty_table) """
+        self.pretty_table.clear_rows()
 
-        if((existsMethod == True)):
-            return True
-        else:
-            return False
+    def ExtractInfo(self, parent, scope, tabla_tipo):
+        """
+        Retorna el valor de informacion de la estructura y lo guarda en la tabla
+        *@param: parent: el padre
+        *@param: scope: el scope o lugar
+        *@param: tabla_tipo: el tipo de tabla
+        """
+        for i in scope.dictSimbolos:
+            typeValue = tabla_tipo.getSymbolFromTable(i['Tipo'])
+            self.AddEntryToTable(
+                parent, i['Tipo'], i['Id'], typeValue['Description'])
 
-    def AddNewMethod_DictMethod(self, methodType="", methodName="", parametros=[], returnValue=False, padre=""):
+    def getChild(self, typeValue, name):
         """
-        Agrega una nueva tupla a la tabla de simbolos de la tabla de METODOS
-        *@param: methodType: el tipo de método, como void
-        *@param: methodName: el nombre del método -> como main
-        *@param: parametros: un array con sus parámetros
-        *@param: returnValue: el valor que planea retornar o el tipo, sino vacío
-        *@param: padre: el padre del método
+        retorna el hijo
+        *@param: typeValue:el tipo de valor
+        *@param: scnameope: eel nombre
         """
-        existsEntry = self.checkMethodInMethodSymbolTableV2(methodName)
-        # colocamos en el orden especificado
-        arraynuevo = [methodType, methodName, parametros, returnValue, padre]
-        # si la entrada NO existe
-        if(existsEntry == False):
-            # agregamos una nueva entrada al diccionario
-            self.dictMethods[self.contadorGlobalDictMethods] = arraynuevo
-            self.contadorGlobalDictMethods += 1
-        else:
-            print("Error a nivel de tabla de simbolos. La entrada del método ya existe.")
+        copy_symbols = self.dictSimbolos.copy()
+        copy_symbols.reverse()
+        for symbol in copy_symbols:
+            if symbol['Parent'] in typeValue and symbol['Id'] == name:
+                return symbol
 
-    def getTypeMethodDictMethods(self, methodName):
-        """
-        Retorna el tipo de método
-        *@param: methodName: el nombre del método
-        """
-        for numeroTupla, valorTupla in self.dictMethods.items():
-            if(str(methodName) == str(valorTupla[1])):
-                return valorTupla[0]
+        return 0
 
-        return ""
 
-    def getPadreMethodDictMethods(self, methodName):
+class dictTableMetods():
+    def __init__(self):
         """
-        Retorna el padre del método
-        *@param: methodName: el nombre del método
+        init de la tabla de métodos
         """
-        for numeroTupla, valorTupla in self.dictMethods.items():
-            if(str(methodName) == str(valorTupla[1])):
-                return valorTupla[4]
+        self.pretty_table = PrettyTable()
+        self.arrayMetodos = []
+        #print(' -- Nuevo SCOPE --')
 
-        return ""
+    def AddEntryToTable(self, typeValue, idValue, parameters, returnVariable):
+        """
+        agrega un valor a la tabla
+        *@param: typeValue: el tipo de método
+        *@param: idValue: el ID
+        *@param: parameters: los parametros si posee
+        *@param: returnVariable: la variable de retorno si tiene
+        """
+        self.arrayMetodos.append({
+            'Tipo': typeValue,
+            'Id': idValue,
+            'Parameters': parameters,
+            'Return': returnVariable
+        })
 
-    def getParametersDictMethods(self, methodName):
+    def getSymbolFromTable(self, variable):
         """
-        Retorna los parámetros del método mandado
-        *@param: methodName: el nombre del método
+        Retorna el valor pasado
+        *@param: variable: el id del valor
         """
-        for numeroTupla, valorTupla in self.dictMethods.items():
-            if(str(methodName) == str(valorTupla[1])):
-                return valorTupla[2]
+        for metodo in self.arrayMetodos:
+            if metodo['Id'] == variable:
+                return metodo
 
-        return []
+        return 0
 
-    def getParametersTypeDictMethods(self, methodName):
+    def valueToTable(self):
         """
-        Retorna los parámetros del método mandado
-        *@param: methodName: el nombre del método
+        transforma un array o valor a tabla
         """
-        parametros = []
-        arrayTipos = []
-        for numeroTupla, valorTupla in self.dictMethods.items():
-            if(str(methodName) == str(valorTupla[1])):
-                parametros = valorTupla[2]
+        self.pretty_table.field_names = ['Tipo', 'ID', 'Parameters', 'Return']
+        for i in self.arrayMetodos:
+            self.pretty_table.add_row(list(i.values()))
 
-        tipoVariable = ""
-        for x in parametros:
-            tipoVariable = self.getTypeVarDictVar(x, methodName)
-            arrayTipos.append(tipoVariable)
+        #print(' --- Diccionario métodos ---')
+        #print(self.pretty_table)
+        self.pretty_table.clear_rows()
 
-        return arrayTipos
 
-    def getReturnDictMethods(self, methodName):
+class dictTableVars():
+    def __init__(self):
         """
-        Retorna el tipo de return de un metodo
-        *@param: methodName: el nombre del método
+        Init de la tabla de variables
         """
-        for numeroTupla, valorTupla in self.dictMethods.items():
-            if(str(methodName) == str(valorTupla[1])):
-                return valorTupla[3]
+        # enumerador de valores
+        self.ARRAY = 'array'
+        self.STRUCT = 'struct'
+        self.PRIMITIVE = 'primitive'
+        self.typesArray = []
+        # agregamos esos valores a la tabla de entradas con el size de cada una
+        self.AddEntryToTable('int', 4, self.PRIMITIVE)
+        self.AddEntryToTable('char', 2, self.PRIMITIVE)
+        self.AddEntryToTable('boolean', 1, self.PRIMITIVE)
+        self.AddEntryToTable('void', 0, self.PRIMITIVE)
+        #print(' -- Dictionario de Variables --')
 
-        return False
+    def AddEntryToTable(self, typeValue, size, description):
+        """
+        Retorna el valor pasado
+        *@param: typeValue: el tipo
+        *@param: size: el tamaño de la var
+        *@param: description: la descripcion de la variable
+        """
+        self.typesArray.append({
+            'Tipo': typeValue,
+            'Size': size,
+            'Description': description
+        })
 
-    # ! ------------------------- METODOS DE DICCIONARIO DE ESTRUCTURAS ---------
-    def getDictStruct(self):
+    def getSymbolFromTable(self, typeValue):
         """
-        Retorna el diccionario de estructuras
+        Retorna el valor pasado
+        *@param: variable: el id del valor
         """
-        return self.dictStructs
+        innerArray = self.typesArray.copy()
+        innerArray.reverse()
+        for type in innerArray:
+            if type['Tipo'] == typeValue:
+                return type
+        return 0
 
-    def checkStructInStructSymbolTableV2(self, structName):
-        """
-        Revisa si una estructura existe en la tabla de structs,
-        sino retonar FALSE. Sino True
-        *@param: structName: el nombre de la estructura
-        """
-        existsStruct = False
-        for numeroTupla, valorTupla in self.dictStructs.items():
-            if(str(structName) == str(valorTupla[0])):
-                existsStruct = True
 
-        if((existsStruct == True)):
-            return True
-        else:
-            return False
 
-    def getStructInformation(self, structName):
-        """
-        Retorna la tupla de una estructura
-        *@param: structName: el nombre de la estructura
-        """
-        existsStruct = []
-        for numeroTupla, valorTupla in self.dictStructs.items():
-            if(str(structName) == str(valorTupla[0])):
-                existsStruct = valorTupla
-
-        return existsStruct
-
-    def AddNewStruct_DictStruct(self, structName="", structType="", scopePadre=""):
-        """
-        Agrega una nueva tupla a la tabla de simbolos de la tabla de ESTRUCTURAS
-        *@param: structName: el nombre de la estructura
-        *@param: structType: el tipo de la estructura SI tiene
-        *@param: scopePadre: el scope padre
-        """
-        existsEntry = self.checkStructInStructSymbolTableV2(structName)
-        # colocamos en el orden especificado
-        arraynuevo = [structName, structType, scopePadre]
-        # si la entrada NO existe
-        if(existsEntry == False):
-            # agregamos una nueva entrada al diccionario
-            self.dictStructs[self.contadorGlobalDictStructs] = arraynuevo
-            self.contadorGlobalDictStructs += 1
-        else:
-            print(
-                "Error a nivel de tabla de simbolos. La entrada de la struct ya existe.")

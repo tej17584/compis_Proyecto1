@@ -1,10 +1,10 @@
 """
 Nombre: Alejandro Tejada
 Curso: Diseño Compiladores
-Fecha: Agosto 2021
+Fecha: septiembre 2021
 Programa: main.py
-Propósito: Este programa es el encargado de llamar al listener, printer, walker, etc de
-ANTRL, tambien maneja algunas logicas
+Propósito: Programa de nueva version del main anterior
+V 2.0
 """
 
 # ZONA DE IMPORTS
@@ -20,2123 +20,1104 @@ from symbolTable import *
 import emoji
 import sys
 from pprint import pprint
+from itertools import groupby
+from symbolTable import *
 
 
 class MyErrorListener(ErrorListener):
     def __init__(self):
+        self.hasErrors = False
+        self.lexicalErrors = []
         super(MyErrorListener, self).__init__()
+        pass
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        f = open("errores.txt", "w", encoding="utf8")
-        f.write(str(line) + ":" + str(column) + ": sintaxis ERROR encontrado, " +
-                str(msg))
+        self.hasErrors = True
+        errorMsg = str(line) + ":" + str(column) + \
+            ": sintaxis ERROR encontrado " + str(msg)
+        self.lexicalErrors.append(errorMsg)
+
+    def getHasError(self):
+        return self.hasErrors
 
 
-class decafAlejandroPrinter(decafAlejandroListener):
-    """
-    Clase encargada de los métodos generados por ANTLR
-    # primera vuelta
-    """
+class DecafAlejandroPrinter(decafAlejandroListener):
+    def __init__(self):
+        self.root = None
+        # data types primitivos
+        self.BOOLEAN = 'boolean'
+        self.VOID = 'void'
+        self.STRING = 'char'
+        self.INT = 'int'
+        self.ERROR = 'error'
+        # un diccionario con primitivos
+        self.data_type = {
+            'char': self.STRING,
+            'int': self.INT,
+            'boolean': self.BOOLEAN,
+            'void': self.VOID,
+            'error': self.ERROR
+        }
+        # variables distintas
+        self.ambitos = []
+        self.scope_Actual = None
+        self.tablaVariables = dictTableVars()
+        self.errores = SemanticError()
+        self.tabla_metodos = dictTableMetods()
+        self.tabla_estructuras = dictTableStruct()
+        self.tabla_parametros = tableDictParameters()
 
-    def __init__(self) -> None:
-        self.functions = funciones()  # funciones necesarias y varias
-        self.tablaSimbolos = symbolTables()
-        self.scopeActual = "global"
-        self.scopeAnterior = "global"
-        self.conteoIfs = 0
+        self.tipoNodo = {}  # el tipo de nodo de cada valor que iteraremos
 
-    def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
-        return super().enterStatement(ctx)
+        super().__init__()
+
+    def popScope(self):
+        self.scope_Actual.valueToTable()
+        self.scope_Actual = self.ambitos.pop()
+
+    def addScope(self):
+        self.ambitos.append(self.scope_Actual)
+        self.scope_Actual = generalSymbolTable()
+
+    def findVar(self, variable):
+        """
+        *@param variable: busca la variable en el scope actual
+        """
+        innerArray = []
+        innerVar = self.scope_Actual.getSymbolFromTable(variable)
+        if innerVar == 0:
+            innerArray = self.ambitos.copy()
+            innerArray.reverse()
+            for scope in innerArray:
+                innerVar2 = scope.getSymbolFromTable(variable)
+                if innerVar2 != 0:
+                    return innerVar2
+            return 0
+        else:
+            return innerVar
+
+    def Intersection(self, a, b):
+        """
+        Realiza la interseccion de dos valores
+        """
+        return [v for v in a if v in b]
+
+    def all_equal(self, iterable):
+        """
+        Iterable es la variable que busca el valor
+        """
+        g = groupby(iterable)
+        return next(g, True) and not next(g, False)
+
+    def ChildrenHasError(self, ctx):
+        """
+        REvisa que el hijo tenga errores. Retorna TRUE si hay o FALSE si no
+        *@param ctx: el contexto
+        """
+        non_terminals = [self.tipoNodo[i] for i in ctx.children if type(
+            i) in [decafAlejandroParser.LocationContext,
+                   decafAlejandroParser.ExprContext,
+                   decafAlejandroParser.BlockContext,
+                   decafAlejandroParser.DeclarationContext]]
+        if self.ERROR in non_terminals:
+            return True
+        return False
 
     def enterProgram(self, ctx: decafAlejandroParser.ProgramContext):
-        pprint("--------------------COMENZANDO REVISIÓN DE PROGRAMA--------------")
-        pprint(" -----> LOS ERRORES APARECEERÁN ABAJO")
-        pprint("")
-
-    def exitProgram(self, ctx: decafAlejandroParser.ProgramContext):
-        pprint(
-            "------------------FINALIZADA REVISIÓN DE PROGRAMA------------------------")
-        pprint("LOS DICCIONARIOS O TABLAS FINALES SON: ")
-        pprint("")
-        pprint("----------------------TABLA DE VARIABLES---------------------")
-        diccionarioVarsFinal = self.tablaSimbolos.getDictVar()
-        pprint(diccionarioVarsFinal)
-        pprint("")
-        pprint("----------------------TABLA DE METODOS---------------------")
-        diccionarioMethodsFinal = self.tablaSimbolos.getDictMethod()
-        pprint(diccionarioMethodsFinal)
-        pprint("")
-        pprint("----------------------TABLA DE ESTRUCTURAS---------------------")
-        diccionarioStructsFinal = self.tablaSimbolos.getDictStruct()
-        pprint(diccionarioStructsFinal)
-        # ! verificamos la logica de la definicion de main sin parametros
-        mainMethodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
-            "main")
-        tipoMetodo = self.tablaSimbolos.getTypeMethodDictMethods("main")
-        parametros = self.tablaSimbolos.getParametersDictMethods("main")
-        returnValue = self.tablaSimbolos.getReturnDictMethods("main")
-        if(mainMethodExists == True and tipoMetodo == "void" and len(parametros) == 0 and returnValue == False):
-            pass
-        else:
-            f = open("errores.txt", "w", encoding="utf8")
-            f.write(
-                f'--> ERROR. No está declarado el método main sin parámetros  linea: {ctx.start.line}, columna: {ctx.start.column}')
-
-            # exit()
-
-    def enterStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
-        # actualizamos el scope
-        self.scopeAnterior = self.scopeActual
-        self.scopeActual = ctx.ID().getText()
-        # tomamos los datos que nos interesan
-        name = ctx.ID().getText()
-        tipo = ctx.STRUCT().getText()
-        line = ctx.start.line
-        column = ctx.start.column
-        scope = self.scopeActual
-        # agregamos la nueva estructura
-        self.tablaSimbolos.AddNewStruct_DictStruct(
-            name, tipo, self.scopeAnterior)
-        # agregamos la estructura como nuevo método
-        self.tablaSimbolos.AddNewMethod_DictMethod(
-            "struct", name, [], False, self.scopeAnterior)
-
-    def exitStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
-        # actualizamos el scope cuando salimso de la funcion
-        self.scopeActual = self.scopeAnterior
+        print('----------> INICIO COMPILACION <--------------')
+        self.root = ctx
+        self.scope_Actual = generalSymbolTable()
 
     def enterMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
-        # actualizamos el scope
-        self.scopeAnterior = self.scopeActual
-        self.scopeActual = ctx.method_name().getText()
-        # miramos si tiene return
-        returnValue = ""
-        returnExpresion = ""
-        returnExpresionIF = ""
-        try:
-            # el nombre de la variable
-            returnValue = ctx.block().statement()[0].expr().getText()
-        except:
-            pass
-        try:
-            # el valor de return
-            returnExpresion = ctx.block().statement()[0].RETURN().getText()
-        except:
-            pass
-        #! agregamos los métodos
-        name = ctx.method_name().getText()  # el nombre del método
-        tipo = ctx.return_type().getText()
-        # print("El tipo de metodo es", tipo)
-        parametros = ctx.var_id()
-        tiposVariables = ctx.var_type()
-        line = ctx.start.line
-        column = ctx.start.column
-        scope = self.scopeActual
-        methodExists = self.tablaSimbolos.checkMethodInMethodSymbolTableV2(
-            name)
-        if(methodExists == False):
-            # ahora miramos los parametros
-            parametrosToAdd = []
-            methodReturnsThings = False
-            for x in range(0, len(parametros)):
-                # agregamos al array para guardarlo
-                variable = parametros[x].getText()
-                tipoVariable = tiposVariables[x].getText()
-                parametrosToAdd.append(variable)
-                # una vez agregado, ahora vamos a guardar la variable en el scope
-                varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                    variable, scope)
-                if(varExists == False):
-                    if("struct" in tipo):
-                        tipo = tipo.replace("struct", "")
-                    self.tablaSimbolos.AddNewVar_DictVar(
-                        variable, tipoVariable, scope, 0, 0)
-                elif(varExists == True):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> Error_varDeclaration, la variable {variable} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
-                    # exit()
-            # el valor de return
-            returnExpresionIF = ctx.block().statement()
-            lenReturnExpresionIF = len(ctx.block().statement())
-            for x in range(0, lenReturnExpresionIF):
-                # obtenemos el obtjeto
-                valorInterno = returnExpresionIF[x].block()
-                for y in range(0, len(valorInterno)):
-                    valorReturn = valorInterno[y].statement()[
-                        0].getText()
-                    if(valorReturn != "" or valorReturn != None):
-                        if("return" in valorReturn):
-                            returnExpresion = "return"
+        metodo = ctx.method_name().getText()
+        parameters = []
 
-                # print("parametros", parametros[x].getText())
-            if(returnExpresion == "return" and returnValue != ""):
-                methodReturnsThings = True
-            if(tipo != "void"):
-                if(returnExpresion == "" or returnValue == ""):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> ERROR. El método {name} no esta retornando nada. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
-                    # exit()
-                # una vez guardados parametros y variables, ahora guardamos la nueva entrada del diccionario
-            self.tablaSimbolos.AddNewMethod_DictMethod(
-                tipo, name, parametrosToAdd, methodReturnsThings, self.scopeAnterior)
+        if self.tabla_metodos.getSymbolFromTable(metodo) == 0:
+            if ctx.return_type().var_type() is not None:
+                tipo = ctx.return_type().var_type().getText()
+            else:
+                tipo = ctx.return_type().getText()
+            hijos = ctx.getChildCount()
+
+            for i in range(hijos):
+                if isinstance(ctx.getChild(i), decafAlejandroParser.Var_typeContext):
+                    typeParameter = self.data_type[ctx.getChild(i).getText()]
+                    idParameter = ctx.getChild(i + 1).getText()
+                    if idParameter in [i['Id'] for i in parameters]:
+                        line = ctx.getChild(i + 1).start.line
+                        col = ctx.getChild(i + 1).start.column
+                        self.errores.AddEntryToTable(
+                            line, col, self.errores.errrorText_VARDUPLICADA)
+
+                    parameters.append(
+                        {'Tipo': typeParameter, 'Id': idParameter})
+                    self.tabla_parametros.AddEntryToTable(
+                        typeParameter, idParameter)
+
+            self.tabla_metodos.AddEntryToTable(tipo, metodo, parameters, None)
         else:
-            f = open("errores.txt", "w", encoding="utf8")
-            f.write(
-                f'--> Error, el método {name} ya fue declarado anteriormente. Linea: {line} columna: {column} ')
-            # exit()
-        # print("La variable existe", methodExists)
+            # self.tipoNodo
+            line = ctx.method_name().start.line
+            col = ctx.method_name().start.column
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_VARDUPLICADA)
+
+        self.addScope()
+
+        for parameter in parameters:
+            type_symbol = self.tablaVariables.getSymbolFromTable(
+                parameter['Tipo'])
+            size = type_symbol['Size']
+            offset = self.scope_Actual.offsetVariables
+            self.scope_Actual.AddEntryToTable(
+                parameter['Tipo'], parameter['Id'], size, offset, True)
 
     def exitMethod_declr(self, ctx: decafAlejandroParser.Method_declrContext):
-        # actualizamos el scope cuando salimso de la funcion
-        self.scopeActual = self.scopeAnterior
+        metodo = ctx.method_name().getText()
+        self.tabla_parametros.cleanTable()
+        self.popScope()
 
-    def enterStatement(self, ctx: decafAlejandroParser.StatementContext):
-        # validaciones para que no entre por gusto
-        hasReturnValue = self.functions.hasReturnValue(ctx)
-        name = ""
-        try:
-            name = ctx.location().getText()  # el nombre de la variable
-        except:
-            pass
-        # si tiene valor de retorno
-        if(hasReturnValue):
-            # verificamos si deberia poder retornar algo
-            if("if" in self.scopeActual or "while" in self.scopeActual):
-                methodTypeFromTable = self.tablaSimbolos.getTypeMethodDictMethods(
-                    self.scopeAnterior)
-            else:
-                methodTypeFromTable = self.tablaSimbolos.getTypeMethodDictMethods(
-                    self.scopeActual)
-            if(methodTypeFromTable == "void"):
-                f = open("errores.txt", "w", encoding="utf8")
-                f.write(
-                    f'--> ERROR. Un método tipo VOID no puede devolver algo. "{self.scopeActual}", linea: {ctx.start.line}, columna: {ctx.start.column}')
-                # exit()
-            else:
-                value = ctx.expr().getText()
-                arrayVars = []
-                if((value == "true" or value == "false") and methodTypeFromTable != "boolean"):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> ERROR. Variable boolean retornada en un método NO booleano "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # exit()
-                elif(self.functions.checkIfIsInt(value) and methodTypeFromTable != "int"):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> ERROR. Variable int retornada en un método NO INT "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # exit()
-                elif(self.functions.checkGeneraltype(value, "string") and methodTypeFromTable != "string"):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> ERROR. Variable string retornada en un método NO STRING "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # exit()
+        return_type = ctx.return_type().getText()
+        block_type = self.tipoNodo[ctx.block()]
 
-                if(self.functions.checkIfIsInt(value) == False and value != "false" and value != "true" and self.functions.checkGeneraltype(value, "string") == False):
-                    if("." in value):
-                        indice = value.index(".")
-                        variableEstructura = value[0:indice]
-                        variableDentroEstructura = value[indice+1:len(value)]
-                        # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
-                        if("[" in variableEstructura or "]" in variableEstructura):
-                            indexCorchete = variableEstructura.index("[")
-                            variableEstructura = variableEstructura[0: indexCorchete]
-                        if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
-                            indexCorchete = variableDentroEstructura.index("[")
-                            variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
-                        # mandamos ambos parametros
-                        structExists = self.tablaSimbolos.varExistsRecursivo(
-                            variableEstructura, self.scopeActual, False)
-                        if(structExists):
-                            informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                variableEstructura, self.scopeActual, False, [])
-                            innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                variableDentroEstructura, informacionStruct[1])
-                            if(innerVarExists):
-                                informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                    variableDentroEstructura, informacionStruct[1], False, [])
-                                if(informacionInnerVarStruct[1] != methodTypeFromTable):
-                                    f = open("errores.txt", "w",
-                                             encoding="utf8")
-                                    f.write(
-                                        f'--> ERROR. Variable "{variableDentroEstructura}" no es del tipo requerido de retorno de {self.scopeActual} "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    pass
-                            else:
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        else:
-                            f = open("errores.txt", "w", encoding="utf8")
-                            f.write(
-                                f'--> ERROR. Variable {variableEstructura} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # exit()
-                    else:
-                        scope = self.scopeActual
-                        if("+" in value or "-" in value or "/" in value or "*" in value or "%" in value):
-                            splitHijos = self.functions.removeOperations(value)
-                            for x in splitHijos:
-                                # o variable, o numero u operador
-                                hijo = x
-                                if(hijo != ""):
-                                    if(self.functions.checkIfIsInt(hijo) == False):
-                                        # si no es int verificamos que NO sea variable
-                                        varExists = self.tablaSimbolos.varExistsRecursivo(
-                                            hijo, scope, False)
-                                        if(varExists):
-                                            informationHijo = self.tablaSimbolos.getVarInformationRecursivo(
-                                                hijo, scope, False, [])
-                                            if(informationHijo[1] != "int"):
-                                                f = open(
-                                                    "errores.txt", "w", encoding="utf8")
-                                                f.write(
-                                                    f'--> ERROR_RETURN. La variable o valor "{hijo}" NO es del tipo INT. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                                # exit()
-                                        else:
-                                            # si no es var, miramos si no es método en el return
-                                            # obtenemos el tipo de método
-                                            tipoMetodo = self.tablaSimbolos.getTypeMethodDictMethods(
-                                                hijo)
-                                            if(tipoMetodo != "int"):
-                                                f = open(
-                                                    "errores.txt", "w", encoding="utf8")
-                                                f.write(
-                                                    f'--> ERROR_RETURN. La variable o método "{hijo}" NO es del tipo INT y se intenta usar en una operación aritimética de return. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        else:
-                            for i in range(len(value)):
-                                varExistsReturn = self.tablaSimbolos.varExistsRecursivo(
-                                    value[i], self.scopeActual, False)
-                                if(varExistsReturn == False):
-                                    f = open("errores.txt", "w",
-                                             encoding="utf8")
-                                    f.write(
-                                        f'--> ERROR. La variable retornada NO existe  "{self.scopeActual}", linea: {ctx.start.line}')
-                                    # exit()
-                                varinformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                    value[i], self.scopeActual, False, [])
-                                if isinstance(varinformation[1], str) and len(varinformation[1]) > 0:
-                                    arrayVars.append(varinformation[1])
-                                if not len(set(arrayVars)) <= 1:
-                                    f = open("errores.txt", "w",
-                                             encoding="utf8")
-                                    f.write(
-                                        f'--> ERROR. Hay un error en el valor de retorno en el scope "{self.scopeActual}", linea: {ctx.start.line}')
-                                    # exit()
-                            e = ""
-                            if(len(arrayVars) > 0):
-                                e = next(iter(arrayVars))
-                            # obtenemos el tipo de método
-                            if(methodTypeFromTable != e):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. El tipo de retorno de un método SIEMPRE debe ser igual al declarado "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
+        if return_type == self.VOID and block_type != self.VOID and block_type != self.ERROR:
+            self.tipoNodo[ctx] = self.ERROR
+            line = ctx.return_type().start.line
+            col = ctx.return_type().start.column
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_TIPOVOID)
+            return
 
-        else:
-            methodCallAsignacion = ""
-            mehtodCallNormal = ""
-            try:
-                methodCallAsignacion = ctx.expr().method_call()
-            except:
-                pass
-            try:
-                mehtodCallNormal = ctx.method_call()
-            except:
-                pass
-            # este if es para ver si la llamada a un método es con asignacion
-            if(methodCallAsignacion != None and methodCallAsignacion != ""):
-                tipoGuardado = ""
-                metodoAsignado = ctx.expr().method_call().method_call_inter().method_name().getText()
-                # verificamos si deberia poder retornar algo
-                scope = self.scopeActual
-                methodTypeFromTableV2 = self.tablaSimbolos.getTypeMethodDictMethods(
-                    metodoAsignado)
-                # verificamos si es una estructura
-                if("." in name):  # es una estructura
-                    indice = name.index(".")
-                    variableEstructura = name[0:indice]
-                    variableDentroEstructura = name[indice+1:len(name)]
-                    # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
-                    if("[" in variableEstructura or "]" in variableEstructura):
-                        indexCorchete = variableEstructura.index("[")
-                        variableEstructura = variableEstructura[0: indexCorchete]
-                    if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
-                        indexCorchete = variableDentroEstructura.index("[")
-                        variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
-                    structExists = self.tablaSimbolos.varExistsRecursivo(
-                        variableEstructura, self.scopeActual, False)
-                    if(structExists):  # si la estructura existe
-                        # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                        informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                            variableEstructura, self.scopeActual, False, [])
-                        if("." in variableDentroEstructura):  # si por casualidad tenemos OTRO nivel
-                            indice2 = variableDentroEstructura.index(".")
-                            # c
-                            variableEstructura2 = variableDentroEstructura[0:indice2]
-                            # a
-                            variableDentroEstructura2 = variableDentroEstructura[indice2+1:len(
-                                variableDentroEstructura)]
-                            structExists2 = self.tablaSimbolos.varExistsRecursivo(
-                                variableEstructura2, informacionStruct[1], False)
-                            if(structExists2):  # si la estructura existe
-                                # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                informacionStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                    variableEstructura2, informacionStruct[1], False, [])
-                                innerVarExists2 = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                    variableDentroEstructura2, informacionStruct2[1])
-                                if(innerVarExists2):
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct2[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    tipoDatoInnerVariable2 = informacionInnerVarStruct2[1]
-                                    tipoGuardado = tipoDatoInnerVariable2  # lo asignamos a la variable
-                                else:
-                                    f = open("errores.txt", "w",
-                                             encoding="utf8")
-                                    f.write(
-                                        f'--> ERROR33333. Variable anidada "{variableDentroEstructura2}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                            else:
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. Variable anidada {variableEstructura2} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        else:
-                            innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                variableDentroEstructura, informacionStruct[1])
-                            if(innerVarExists):
-                                # obtenemos la información de la variable DENTRO de la estructura
-                                informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                    variableDentroEstructura, informacionStruct[1], False, [])
-                                # obtenemos el tipo de dato
-                                tipoDatoInnerVariable = informacionInnerVarStruct[1]
-                                tipoGuardado = tipoDatoInnerVariable  # lo asignamos a la variable
-                            else:
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR33333. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    else:  # si no existe
-                        f = open("errores.txt", "w", encoding="utf8")
-                        f.write(
-                            f'--> ERROR. Variable {variableEstructura} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
+        if return_type != block_type:
+            if block_type == self.ERROR:
+                self.tipoNodo[ctx] = self.ERROR
+                return
 
-                else:  # es una variable NORMAL
-                    # obtenemos la informacion
-                    # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                    informationVariable = self.tablaSimbolos.getVarInformationRecursivo(
-                        name, scope, False, [])
-                    tipoGuardado = informationVariable[1]
+            self.tipoNodo[ctx] = self.ERROR
+            line = ctx.block().start.line
+            col = ctx.block().start.column
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_TIPO_RETORNO)
 
-                if(methodTypeFromTableV2 == "void"):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> ERROR. Un metodo VOID no puede asignarse a una variable. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # exit()
-                if(methodTypeFromTableV2 == ""):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> ERROR. El método "{metodoAsignado}" NO existe y esta siendo asignado a la variable local "{name}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # exit()
-                elif(tipoGuardado != methodTypeFromTableV2):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> ERROR. El método "{metodoAsignado}" tiene un tipo de retorno "{methodTypeFromTableV2}" y la variable local "{name}" es del tipo "{tipoGuardado}" NO CONCUERDAN . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # exit()
-                # ahora verificamos que si necesita parámetros
-                parametrosMetodo = []
-                tipoParametroEnviado = ""
-                parametrosEnviados = ""  # variable para ver si NOSOTROS estamos mandando parametros
-                parametrosMetodo = self.tablaSimbolos.getParametersTypeDictMethods(
-                    metodoAsignado)
-                if(len(parametrosMetodo) > 0):
-                    nombreParametro = ""
-                    tipoParametrosEnviar = []
-                    tipoParametrosEnviarGlobal = []
-                    # print("tipos parámetros esperados por el método ",
-                    #      parametrosMetodo)
-                    parametrosEnviados = ctx.expr().method_call(
-                    ).method_call_inter().expr()
-                    for x in range(0, len(parametrosEnviados)):
-                        canTryAgain = True
-                        if(canTryAgain):
-                            try:
-                                interTry = parametrosEnviados[x].location(
-                                ).var_id().getText()
-                                if(interTry == "true" or interTry == "false"):
-                                    tipoParametroEnviado = "boolean"
-                                    canTryAgain = False
-                                else:
-                                    tipoParametroEnviado = "variable"
-                                    canTryAgain = False
-                            except:
-                                pass
-                        if(canTryAgain):
-                            try:
-                                interTry = parametrosEnviados[x].literal(
-                                ).int_literal().getText()
-                                tipoParametroEnviado = "int"
-                                canTryAgain = False
-                            except:
-                                pass
-                        if(canTryAgain):
-                            try:
-                                interTry = parametrosEnviados[x].literal(
-                                ).getText()
-                                tipoParametroEnviado = "string"
-                                canTryAgain = False
-                            except:
-                                pass
-                        if(canTryAgain):  # por si es metodo
-                            try:
-                                interTry = parametrosEnviados[x].method_call(
-                                ).getText()
-                                tipoParametroEnviado = "metodo"
-                                canTryAgain = False
-                            except:
-                                pass
-                        if(canTryAgain):  # por si es estructura
-                            try:
-                                interTry = parametrosEnviados[x].location(
-                                ).array_id().getText()
-                                tipoParametroEnviado = "array"
-                                canTryAgain = False
-                            except:
-                                pass
-                        if(tipoParametroEnviado == "variable"):
-                            nombreParametro = parametrosEnviados[x].location(
-                            ).var_id().getText()
-                            tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
-                                nombreParametro, self.scopeActual)
-                            tipoParametroG = self.tablaSimbolos.getTypeVarDictVar(
-                                nombreParametro, "global")
-                            tipoParametrosEnviar.append(tipoParametro)
-                            tipoParametrosEnviarGlobal.append(
-                                tipoParametroG)
-                        elif(tipoParametroEnviado == "boolean"):
-                            nombreParametro = parametrosEnviados[x].location(
-                            ).var_id().getText()
-                            tipoParametrosEnviar.append("boolean")
-                            tipoParametrosEnviarGlobal.append("boolean")
-                        elif(tipoParametroEnviado == "string"):
-                            nombreParametro = parametrosEnviados[x].literal(
-                            ).getText()
-                            tipoParametrosEnviar.append("string")
-                            tipoParametrosEnviarGlobal.append("string")
-                        elif(tipoParametroEnviado == "int"):
-                            nombreParametro = parametrosEnviados[x].literal(
-                            ).int_literal().getText()
-                            tipoParametrosEnviar.append("int")
-                            tipoParametrosEnviarGlobal.append("int")
-                        elif(tipoParametroEnviado == "metodo"):
-                            nombreParametro = parametrosEnviados[x].method_call(
-                            ).getText()
-                            if("(" in nombreParametro):
-                                nombreParametro = nombreParametro.replace(
-                                    "(", "")
-                            if(")" in nombreParametro):
-                                nombreParametro = nombreParametro.replace(
-                                    ")", "")
-                            # obtenemos el tipo de método
-                            tipoMetodo = self.tablaSimbolos.getTypeMethodDictMethods(
-                                nombreParametro)
-                            tipoParametrosEnviar.append(tipoMetodo)
-                            tipoParametrosEnviarGlobal.append(tipoMetodo)
-                        elif(tipoParametroEnviado == "array"):
-                            nombreArray = parametrosEnviados[x].location(
-                            ).array_id().getText()
-                            if("." in nombreArray):  # es una estructura
-                                indice = nombreArray.index(".")
-                                variableEstructura = nombreArray[0:indice]
-                                variableDentroEstructura = nombreArray[indice + 1:len(
-                                    nombreArray)]
-                                # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
-                                if("[" in variableEstructura or "]" in variableEstructura):
-                                    indexCorchete = variableEstructura.index(
-                                        "[")
-                                    variableEstructura = variableEstructura[0: indexCorchete]
-                                if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
-                                    indexCorchete = variableDentroEstructura.index(
-                                        "[")
-                                    variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
-                                # si tenemos otro nivel
-                                if("." in variableDentroEstructura):
-                                    # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura, self.scopeActual, False, [])
-                                    indice2 = variableDentroEstructura.index(
-                                        ".")
-                                    variableEstructura2 = variableDentroEstructura[0:indice2]
-                                    variableDentroEstructura2 = variableDentroEstructura[indice2 + 1:len(
-                                        variableDentroEstructura)]
-                                    # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                    informacionStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, informacionStruct[1], False, [])
-                                    informacionInnerVarStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct2[1], False, [])
-                                    tipoDatoInnerVariable2 = informacionInnerVarStruct2[1]
-                                    tipoParametrosEnviar.append(
-                                        tipoDatoInnerVariable2)
-                                    tipoParametrosEnviarGlobal.append(
-                                        tipoDatoInnerVariable2)
-                                else:
-                                    # probamos si existe la struct
-                                    structExists = self.tablaSimbolos.varExistsRecursivo(
-                                        variableEstructura, self.scopeActual, False)
-                                    if(structExists):
-                                        # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                        informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                            variableEstructura, self.scopeActual, False, [])
-                                        innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                            variableDentroEstructura, informacionStruct[1])
-                                        if(innerVarExists):
-                                            informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                                variableDentroEstructura, informacionStruct[1], False, [])
-                                            tipoDatoInnerVariable = informacionInnerVarStruct[1]
-                                            tipoParametrosEnviar.append(
-                                                tipoDatoInnerVariable)
-                                            tipoParametrosEnviarGlobal.append(
-                                                tipoDatoInnerVariable)
-                                        else:
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. La estructura o un valor interno de parámetro enviado no existe "{variableEstructura}" .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    else:
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La estructura de parámetro enviado no existe "{variableEstructura}" .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # print("TIPOS DAODS ", tipoParametrosEnviar)
-                    if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
-                        f = open("errores.txt", "w", encoding="utf8")
-                        f.write(
-                            f'--> ERROR. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        # exit()
-                    for y in range(0, len(parametrosMetodo)):
-                        if(tipoParametrosEnviar[y] != ""):
-                            if(parametrosMetodo[y] != tipoParametrosEnviar[y]):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                        else:
-                            f = open("errores.txt", "w", encoding="utf8")
-                            f.write(
-                                f'--> ERROR. Un parámetro enviado al método "{metodoAsignado}" NO ha sido DECLARADO.linea: {ctx.start.line} , columna: {ctx.start.column}')
-                            # exit()
-                    # revisamos globalmente
-                    for y in range(0, len(parametrosMetodo)):
-                        if(tipoParametrosEnviarGlobal[y] != ""):
-                            if(parametrosMetodo[y] != tipoParametrosEnviarGlobal[y]):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR2. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-            # este if es para ver si la llamada a un metodo es sin asignacion, solo normalmente
-            elif(mehtodCallNormal != None and mehtodCallNormal != ""):
-                metodoAsignado = ctx.method_call().method_call_inter().method_name().getText()
-                # verificamos si deberia poder retornar algo
-                scope = self.scopeActual
-                methodTypeFromTableV2 = self.tablaSimbolos.getTypeMethodDictMethods(
-                    metodoAsignado)
-                if(methodTypeFromTableV2 == ""):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(
-                        f'--> ERRORA2. El método "{metodoAsignado}" NO existe "{name}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # exit()
-                # ahora verificamos que si necesita parámetros
-                parametrosMetodo = []
-                parametrosEnviados = ""  # variable para ver si NOSOTROS estamos mandando parametros
-                parametrosMetodo = self.tablaSimbolos.getParametersTypeDictMethods(
-                    metodoAsignado)
-                if(len(parametrosMetodo) > 0):
-                    nombreParametro = ""
-                    tipoParametrosEnviar = []
-                    tipoParametrosEnviarGlobal = []
-                    # print("tipos parámetros esperados por el método ",
-                    #      parametrosMetodo)
-                    tipoParametroEnviado = ""
-                    parametrosEnviados = ctx.method_call().method_call_inter().expr()
-                    if(len(parametrosEnviados) > 0):
-                        for x in range(0, len(parametrosEnviados)):
-                            canTryAgain = True
-                            if(canTryAgain):
-                                try:
-                                    interTry = parametrosEnviados[x].location(
-                                    ).var_id().getText()
-                                    if(interTry == "true" or interTry == "false"):
-                                        tipoParametroEnviado = "boolean"
-                                        canTryAgain = False
-                                    else:
-                                        tipoParametroEnviado = "variable"
-                                        canTryAgain = False
-                                except:
-                                    pass
-                            if(canTryAgain):
-                                try:
-                                    interTry = parametrosEnviados[x].literal(
-                                    ).int_literal().getText()
-                                    tipoParametroEnviado = "int"
-                                    canTryAgain = False
-                                except:
-                                    pass
-                            if(canTryAgain):
-                                try:
-                                    interTry = parametrosEnviados[x].literal(
-                                    ).getText()
-                                    tipoParametroEnviado = "string"
-                                    canTryAgain = False
-                                except:
-                                    pass
-                            if(canTryAgain):  # por si es metodo
-                                try:
-                                    interTry = parametrosEnviados[x].method_call(
-                                    ).getText()
-                                    tipoParametroEnviado = "metodo"
-                                    canTryAgain = False
-                                except:
-                                    pass
-                            if(canTryAgain):  # por si es estructura
-                                try:
-                                    interTry = parametrosEnviados[x].location(
-                                    ).array_id().getText()
-                                    tipoParametroEnviado = "array"
-                                    canTryAgain = False
-                                except:
-                                    pass
-
-                            if(tipoParametroEnviado == "variable"):
-                                nombreParametro = parametrosEnviados[x].location(
-                                ).var_id().getText()
-                                tipoParametro = self.tablaSimbolos.getTypeVarDictVar(
-                                    nombreParametro, self.scopeActual)
-                                tipoParametroG = self.tablaSimbolos.getTypeVarDictVar(
-                                    nombreParametro, "global")
-                                tipoParametrosEnviar.append(tipoParametro)
-                                tipoParametrosEnviarGlobal.append(
-                                    tipoParametroG)
-                            elif(tipoParametroEnviado == "boolean"):
-                                nombreParametro = parametrosEnviados[x].location(
-                                ).var_id().getText()
-                                tipoParametrosEnviar.append("boolean")
-                                tipoParametrosEnviarGlobal.append("boolean")
-                            elif(tipoParametroEnviado == "string"):
-                                nombreParametro = parametrosEnviados[x].literal(
-                                ).getText()
-                                tipoParametrosEnviar.append("string")
-                                tipoParametrosEnviarGlobal.append("string")
-                            elif(tipoParametroEnviado == "int"):
-                                nombreParametro = parametrosEnviados[x].literal(
-                                ).int_literal().getText()
-                                tipoParametrosEnviar.append("int")
-                                tipoParametrosEnviarGlobal.append("int")
-                            elif(tipoParametroEnviado == "metodo"):
-                                nombreParametro = parametrosEnviados[x].method_call(
-                                ).getText()
-                                if("(" in nombreParametro):
-                                    nombreParametro = nombreParametro.replace(
-                                        "(", "")
-                                if(")" in nombreParametro):
-                                    nombreParametro = nombreParametro.replace(
-                                        ")", "")
-                                # obtenemos el tipo de método
-                                tipoMetodo = self.tablaSimbolos.getTypeMethodDictMethods(
-                                    nombreParametro)
-                                tipoParametrosEnviar.append(tipoMetodo)
-                                tipoParametrosEnviarGlobal.append(tipoMetodo)
-                            elif(tipoParametroEnviado == "array"):
-                                nombreArray = parametrosEnviados[x].location(
-                                ).array_id().getText()
-                                if("." in nombreArray):  # es una estructura
-                                    indice = nombreArray.index(".")
-                                    variableEstructura = nombreArray[0:indice]
-                                    variableDentroEstructura = nombreArray[indice + 1:len(
-                                        nombreArray)]
-                                    # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
-                                    if("[" in variableEstructura or "]" in variableEstructura):
-                                        indexCorchete = variableEstructura.index(
-                                            "[")
-                                        variableEstructura = variableEstructura[0: indexCorchete]
-                                    if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
-                                        indexCorchete = variableDentroEstructura.index(
-                                            "[")
-                                        variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
-                                    # si tenemos otro nivel
-                                    if("." in variableDentroEstructura):
-                                        # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                        informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                            variableEstructura, self.scopeActual, False, [])
-                                        indice2 = variableDentroEstructura.index(
-                                            ".")
-                                        variableEstructura2 = variableDentroEstructura[0:indice2]
-                                        variableDentroEstructura2 = variableDentroEstructura[indice2 + 1:len(
-                                            variableDentroEstructura)]
-                                        # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                        informacionStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            variableEstructura2, informacionStruct[1], False, [])
-                                        informacionInnerVarStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            variableDentroEstructura2, informacionStruct2[1], False, [])
-                                        tipoDatoInnerVariable2 = informacionInnerVarStruct2[1]
-                                        tipoParametrosEnviar.append(
-                                            tipoDatoInnerVariable2)
-                                        tipoParametrosEnviarGlobal.append(
-                                            tipoDatoInnerVariable2)
-                                    else:
-                                        # probamos si existe la struct
-                                        structExists = self.tablaSimbolos.varExistsRecursivo(
-                                            variableEstructura, self.scopeActual, False)
-                                        if(structExists):
-                                            # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                            informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                                variableEstructura, self.scopeActual, False, [])
-                                            innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                                variableDentroEstructura, informacionStruct[1])
-                                            if(innerVarExists):
-                                                informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                                    variableDentroEstructura, informacionStruct[1], False, [])
-                                                tipoDatoInnerVariable = informacionInnerVarStruct[1]
-                                                tipoParametrosEnviar.append(
-                                                    tipoDatoInnerVariable)
-                                                tipoParametrosEnviarGlobal.append(
-                                                    tipoDatoInnerVariable)
-                                            else:
-                                                f = open(
-                                                    "errores.txt", "w", encoding="utf8")
-                                                f.write(
-                                                    f'--> ERROR. La estructura o un valor interno de parámetro enviado no existe "{variableEstructura}" .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        else:
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. La estructura de parámetro enviado no existe "{variableEstructura}" .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                    # print("TIPOS DAODS ", tipoParametrosEnviar)
-                    if(len(parametrosMetodo) != len(tipoParametrosEnviar)):
-                        f = open("errores.txt", "w", encoding="utf8")
-                        f.write(
-                            f'--> ERROR22. El método "{metodoAsignado}" pide un total de {len(parametrosMetodo)} parámetros, pero se están enviando {len(tipoParametrosEnviar)}.linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        # exit()
-                    # Reviosamos localmente
-                    for y in range(0, len(parametrosMetodo)):
-                        if(tipoParametrosEnviar[y] != ""):
-                            if(parametrosMetodo[y] != tipoParametrosEnviar[y]):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR1. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                    # revisamos globalmente
-                    for y in range(0, len(parametrosMetodo)):
-                        if(tipoParametrosEnviarGlobal[y] != ""):
-                            if(parametrosMetodo[y] != tipoParametrosEnviarGlobal[y]):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR2. Un parámetro enviado al método "{metodoAsignado}" no es del mismo tipo REQUERIDO .linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-
-            else:
-                if(ctx.IF() or ctx.WHILE()):
-                    self.conteoIfs += 1
-                    scopeNuevo = ""
-                    if(ctx.IF()):
-                        scopeNuevo = 'if'+str(self.conteoIfs)
-                    elif(ctx.WHILE()):
-                        scopeNuevo = 'while'+str(self.conteoIfs)
-                    self.scopeAnterior = self.scopeActual
-                    self.scopeActual = scopeNuevo
-                    # print("scope antes LUEGO  IF o WHILE", self.scopeActual)
-                    tipoVariableEqOps = ""
-                    tipoVariablecondOps = ""
-                    tipoVariableRelOps = ""
-                    try:
-                        tipoVariableEqOps = ctx.expr().bin_op().eq_op().getText()
-                    except:
-                        pass
-                    try:
-                        tipoVariablecondOps = ctx.expr().bin_op().cond_op().getText()
-                    except:
-                        pass
-                    try:
-                        tipoVariableRelOps = ctx.expr().bin_op().rel_op().getText()
-                    except:
-                        pass
-                    if(tipoVariableEqOps == "" and tipoVariablecondOps == "" and tipoVariableRelOps == ""):
-                        f = open("errores.txt", "w", encoding="utf8")
-                        f.write(
-                            f'--> ERROR. En una condicion, deben darse valores booleanos "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                        # exit()
-                    # agregamos el nuevo if como metodo
-                    self.tablaSimbolos.AddNewMethod_DictMethod(
-                        "", scopeNuevo, [], False, self.scopeAnterior)
-                    # variables de errrorText_EQ_OPS
-                    arraySplitEqOps = []
-                    # variables de cond OPS
-                    arraySplitCondOps = []
-                    # variable para RelOPS
-                    arraySplitRelOps = []
-                    if((tipoVariableEqOps == "==" or tipoVariableEqOps == "!=")
-                            and tipoVariablecondOps == "" and tipoVariableRelOps == ""):
-                        # hacemos split de cada valor y vamos a buscarlo
-                        arraySplitEqOps = ctx.expr().getText().split(tipoVariableEqOps)
-                        valor1 = arraySplitEqOps[0]
-                        valor2 = arraySplitEqOps[1]
-                        # si lo que tenemos tiene un valor de estructura
-                        variableEstructura1 = ""
-                        variableDentroEstructura1 = ""
-                        variableEstructura2 = ""
-                        variableDentroEstructura2 = ""
-                        if("." in valor1):
-                            indice = valor1.index(".")
-                            variableEstructura1 = valor1[0:indice]
-                            variableDentroEstructura1 = valor1[indice +
-                                                               1:len(valor1)]
-                        if("." in valor2):
-                            indice = valor2.index(".")
-                            variableEstructura2 = valor2[0:indice]
-                            variableDentroEstructura2 = valor2[indice +
-                                                               1:len(valor2)]
-                        # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
-                        if("[" in variableEstructura1 or "]" in variableEstructura1):
-                            indexCorchete = variableEstructura1.index("[")
-                            variableEstructura1 = variableEstructura1[0: indexCorchete]
-                        if("[" in variableDentroEstructura1 or "]" in variableDentroEstructura1):
-                            indexCorchete = variableDentroEstructura1.index(
-                                "[")
-                            variableDentroEstructura1 = variableDentroEstructura1[0: indexCorchete]
-                        if("[" in variableEstructura2 or "]" in variableEstructura2):
-                            indexCorchete = variableEstructura2.index("[")
-                            variableEstructura2 = variableEstructura2[0: indexCorchete]
-                        if("[" in variableDentroEstructura2 or "]" in variableDentroEstructura2):
-                            indexCorchete = variableDentroEstructura2.index(
-                                "[")
-                            variableDentroEstructura2 = variableDentroEstructura2[0: indexCorchete]
-
-                        varExists3 = ""
-                        varExists4 = ""
-                        varInformation = []
-                        for x in arraySplitEqOps:
-                            if((valor2 == "true" or valor2 == "false") and (valor1 != "true" and valor1 != "false")):
-                                if("." in valor1):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura1, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura1, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "boolean"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                    f.write(
-                                        f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "boolean"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            elif((valor1 == "true" or valor1 == "false") and (valor2 != "true" and valor2 != "false")):
-                                if("." in valor2):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "boolean"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "boolean"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                            elif(self.functions.checkIfIsInt(valor1) and self.functions.checkIfIsInt(valor2) == False):
-                                if("." in valor2):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "int"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            elif(self.functions.checkIfIsInt(valor2) and (self.functions.checkIfIsInt(valor1) == False)):
-                                if("." in valor1):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura1, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura1, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "int"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR33. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            elif(self.functions.checkGeneraltype(valor1, "string") and self.functions.checkGeneraltype(valor2, "string") == False):
-                                if("." in valor2):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "string"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "string"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            elif(self.functions.checkGeneraltype(valor2, "string") and self.functions.checkGeneraltype(valor1, "string") == False):
-                                if("." in valor1):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura1, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura1, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "string"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "string"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            # condicion por si ambas son dle mismo valor, hacemos PASS
-                            elif((valor2 == "true" or valor2 == "false") and (valor1 == "true" or valor1 == "false")):
-                                pass
-                            elif(self.functions.checkIfIsInt(valor2) and self.functions.checkIfIsInt(valor1)):
-                                pass
-                            elif(self.functions.checkGeneraltype(valor2, "string") and self.functions.checkGeneraltype(valor1, "string")):
-                                pass
-                            else:
-                                varTypeInterno1 = ""
-                                varTypeInterno2 = ""
-                                if("." in valor1):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura1, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura1, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno1 = informacionInnerVarStruct[1]
-                                    # verificamos la otra variable
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        varTypeInterno2 = varInformation2[1]
-                                        if(varTypeInterno1 != varTypeInterno2):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                elif("." in valor2):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno2 = informacionInnerVarStruct[1]
-                                    # verificamos la otra variable
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        varTypeInterno1 = varInformation1[1]
-                                        if(varTypeInterno1 != varTypeInterno2):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                else:
-                                    # verificamos ambas variables
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    varExists4 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == True and varExists4 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExists3 == False and varExists4 == True):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExists3 == False and varExists4 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExists3 == True and varExists4 == True):
-                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno1 = varInformation1[1]
-                                        varTypeInterno2 = varInformation2[1]
-                                        if(varTypeInterno1 != varTypeInterno2):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                # variables de  cond_OPS
-                    if((tipoVariablecondOps == "&&" or tipoVariablecondOps == "||")
-                            and tipoVariableEqOps == "" and tipoVariableRelOps == ""):
-                        # hacemos split de cada valor y vamos a buscarlo
-                        arraySplitCondOps = ctx.expr().getText().split(tipoVariablecondOps)
-                        valor1 = arraySplitCondOps[0]
-                        valor2 = arraySplitCondOps[1]
-                        # si lo que tenemos tiene un valor de estructura
-                        variableEstructura1 = ""
-                        variableDentroEstructura1 = ""
-                        variableEstructura2 = ""
-                        variableDentroEstructura2 = ""
-                        if("." in valor1):
-                            indice = valor1.index(".")
-                            variableEstructura1 = valor1[0:indice]
-                            variableDentroEstructura1 = valor1[indice +
-                                                               1:len(valor1)]
-                        if("." in valor2):
-                            indice = valor2.index(".")
-                            variableEstructura2 = valor2[0:indice]
-                            variableDentroEstructura2 = valor2[indice +
-                                                               1:len(valor2)]
-                        # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
-                        if("[" in variableEstructura1 or "]" in variableEstructura1):
-                            indexCorchete = variableEstructura1.index("[")
-                            variableEstructura1 = variableEstructura1[0: indexCorchete]
-                        if("[" in variableDentroEstructura1 or "]" in variableDentroEstructura1):
-                            indexCorchete = variableDentroEstructura1.index(
-                                "[")
-                            variableDentroEstructura1 = variableDentroEstructura1[0: indexCorchete]
-                        if("[" in variableEstructura2 or "]" in variableEstructura2):
-                            indexCorchete = variableEstructura2.index("[")
-                            variableEstructura2 = variableEstructura2[0: indexCorchete]
-                        if("[" in variableDentroEstructura2 or "]" in variableDentroEstructura2):
-                            indexCorchete = variableDentroEstructura2.index(
-                                "[")
-                            variableDentroEstructura2 = variableDentroEstructura2[0: indexCorchete]
-
-                        varExistsValor1 = ""
-                        varExistsValor2 = ""
-                        for x in arraySplitCondOps:
-                            if((valor2 == "true" or valor2 == "false") and (valor1 != "true" and valor1 != "false")):
-                                if("." in valor1):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura1, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura1, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "boolean"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    if(varExistsValor1 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "boolean"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            elif((valor1 == "true" or valor1 == "false") and (valor2 != "true" and valor2 != "false")):
-                                if("." in valor2):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "boolean"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExistsValor1 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "boolean"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            elif(self.functions.checkIfIsInt(valor1)):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. La variable "{valor1}" es INT pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                            elif(self.functions.checkIfIsInt(valor2)):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. La variable "{valor2}" es INT pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                            elif(self.functions.checkGeneraltype(valor1, "string")):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. La variable "{valor1}" es STRING pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                            elif(self.functions.checkGeneraltype(valor2, "string")):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. La variable "{valor2}" es STRING pero debe ser del tipo "BOOLEAN" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                            # condicion por si ambas son dle mismo valor, hacemos PASS
-                            elif((valor2 == "true" or valor2 == "false") and (valor1 == "true" or valor1 == "false")):
-                                pass
-                            elif(self.functions.checkIfIsInt(valor2) and self.functions.checkIfIsInt(valor1)):
-                                pass
-                            elif(self.functions.checkGeneraltype(valor2, "string") and self.functions.checkGeneraltype(valor1, "string")):
-                                pass
-                            else:
-                                varTypeInterno1 = ""
-                                varTypeInterno2 = ""
-                                if("." in valor1):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura1, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura1, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno1 = informacionInnerVarStruct[1]
-                                    # verificamos la otra variable
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        varTypeInterno2 = varInformation2[1]
-
-                                        if(varTypeInterno1 != "boolean" or varTypeInterno2 != "boolean"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                        elif(varTypeInterno1 == "boolean" and varTypeInterno2 == "boolean"):
-                                            pass
-                                        else:
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                elif("." in valor2):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno2 = informacionInnerVarStruct[1]
-                                    # verificamos la otra variable
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        varTypeInterno1 = varInformation1[1]
-                                        if(varTypeInterno1 != "boolean" or varTypeInterno2 != "boolean"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                        elif(varTypeInterno1 == "boolean" and varTypeInterno2 == "boolean"):
-                                            pass
-                                        else:
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                else:
-                                    # verificamos ambas variables
-                                    varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    varExistsValor2 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExistsValor1 == True and varExistsValor2 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExistsValor1 == False and varExistsValor2 == True):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExistsValor1 == False and varExistsValor2 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExistsValor1 == True and varExistsValor2 == True):
-                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno1 = varInformation1[1]
-                                        varTypeInterno2 = varInformation2[1]
-                                        if(varTypeInterno1 != "boolean" or varTypeInterno2 != "boolean"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                        elif(varTypeInterno1 == "boolean" and varTypeInterno2 == "boolean"):
-                                            pass
-                                        else:
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del tipo BOOLEAN "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-
-                    # variables de REL_OPS
-                    elif((tipoVariableRelOps == "<" or tipoVariableRelOps == "<=" or
-                          tipoVariableRelOps == ">" or tipoVariableRelOps == ">=")
-                            and tipoVariableEqOps == "" and tipoVariablecondOps == ""):
-                        arraySplitRelOps = ctx.expr().getText().split(tipoVariableRelOps)
-                        valor1 = arraySplitRelOps[0]
-                        valor2 = arraySplitRelOps[1]
-                        # si lo que tenemos tiene un valor de estructura
-                        variableEstructura1 = ""
-                        variableDentroEstructura1 = ""
-                        variableEstructura2 = ""
-                        variableDentroEstructura2 = ""
-                        if("." in valor1):
-                            indice = valor1.index(".")
-                            variableEstructura1 = valor1[0:indice]
-                            variableDentroEstructura1 = valor1[indice +
-                                                               1:len(valor1)]
-                        if("." in valor2):
-                            indice = valor2.index(".")
-                            variableEstructura2 = valor2[0:indice]
-                            variableDentroEstructura2 = valor2[indice +
-                                                               1:len(valor1)]
-                        # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
-                        if("[" in variableEstructura1 or "]" in variableEstructura1):
-                            indexCorchete = variableEstructura1.index("[")
-                            variableEstructura1 = variableEstructura1[0: indexCorchete]
-                        if("[" in variableDentroEstructura1 or "]" in variableDentroEstructura1):
-                            indexCorchete = variableDentroEstructura1.index(
-                                "[")
-                            variableDentroEstructura1 = variableDentroEstructura1[0: indexCorchete]
-                        if("[" in variableEstructura2 or "]" in variableEstructura2):
-                            indexCorchete = variableEstructura2.index("[")
-                            variableEstructura2 = variableEstructura2[0: indexCorchete]
-                        if("[" in variableDentroEstructura2 or "]" in variableDentroEstructura2):
-                            indexCorchete = variableDentroEstructura2.index(
-                                "[")
-                            variableDentroEstructura2 = variableDentroEstructura2[0: indexCorchete]
-
-                        varExistsValor1 = ""
-                        varExistsValor2 = ""
-                        for x in arraySplitRelOps:
-                            if(self.functions.checkIfIsInt(valor1) and self.functions.checkIfIsInt(valor2) == False):
-                                if("." in valor2):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "int"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor2} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            elif(self.functions.checkIfIsInt(valor2) and (self.functions.checkIfIsInt(valor1) == False)):
-                                if("." in valor1):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura1, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura1, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno = informacionInnerVarStruct[1]
-                                    if(varTypeInterno != "int"):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. La variable {valor1} NO ha sido declarada o no es valida "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno = varInformation[1]
-                                        if(varTypeInterno != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion, ambas variables deben ser del mismo tipo "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                            elif(valor2 == "true" or valor2 == "false"):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. La variable "{valor2}" es BOOLEAN pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                            elif(valor1 == "true" or valor1 == "false"):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. La variable "{valor1}" es BOOLEAN pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                            elif(self.functions.checkGeneraltype(valor1, "string")):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. La variable "{valor1}" es STRING pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                            elif(self.functions.checkGeneraltype(valor2, "string")):
-                                f = open("errores.txt", "w", encoding="utf8")
-                                f.write(
-                                    f'--> ERROR. La variable "{valor2}" es STRING pero debe ser del tipo "INT" "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                # exit()
-                            # condicion por si ambas son dle mismo valor, hacemos PASS
-                            elif(self.functions.checkIfIsInt(valor2) and self.functions.checkIfIsInt(valor1)):
-                                pass
-                            else:
-                                varTypeInterno1 = ""
-                                varTypeInterno2 = ""
-                                if("." in valor1):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura1, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura1, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno1 = informacionInnerVarStruct[1]
-                                    # verificamos la otra variable
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        varTypeInterno2 = varInformation2[1]
-
-                                        if(varTypeInterno1 != "int" or varTypeInterno2 != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                        elif(varTypeInterno1 == "int" and varTypeInterno2 == "int"):
-                                            pass
-                                        else:
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                elif("." in valor2):
-                                    # obtenemos infromacion de la estructura y de la variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura2, self.scopeActual, False, [])
-                                    # obtenemos la información de la variable DENTRO de la estructura
-                                    informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableDentroEstructura2, informacionStruct[1], False, [])
-                                    # obtenemos el tipo de dato
-                                    varTypeInterno2 = informacionInnerVarStruct[1]
-                                    # verificamos la otra variable
-                                    varExists3 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExists3 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    else:
-                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        varTypeInterno1 = varInformation1[1]
-                                        if(varTypeInterno1 != "int" or varTypeInterno2 != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                        elif(varTypeInterno1 == "int" and varTypeInterno2 == "int"):
-                                            pass
-                                        else:
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                else:
-                                    # verificamos ambas variables
-                                    varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor1, self.scopeActual, False)
-                                    varExistsValor2 = self.tablaSimbolos.varExistsRecursivo(
-                                        valor2, self.scopeActual, False)
-                                    if(varExistsValor1 == True and varExistsValor2 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExistsValor1 == False and varExistsValor2 == True):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExistsValor1 == False and varExistsValor2 == False):
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Una variable no ha sido declarada en una condicion "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                                    elif(varExistsValor1 == True and varExistsValor2 == True):
-                                        varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor1, self.scopeActual, False, [])
-                                        varInformation2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                            valor2, self.scopeActual, False, [])
-                                        # el tipo de variable
-                                        varTypeInterno1 = varInformation1[1]
-                                        varTypeInterno2 = varInformation2[1]
-                                        if(varTypeInterno1 != "int" or varTypeInterno2 != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo int "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                        elif(varTypeInterno1 == "int" and varTypeInterno2 == "int"):
-                                            pass
-                                        else:
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. En una condicion de relación, ambas variables deben ser del tipo INT "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-
-                elif(ctx.assign_op().EQUAL_OP()):  # logica cuando asignamos del lado derecho
-                    valorAsignado = ctx.expr().getText()
-                    expresionEntera = ctx.expr().getText()
-                    splitHijos = []
-                    splitHijos = self.functions.removeOperations(
-                        expresionEntera)
-                    scope = self.scopeActual
-                    if("+" in valorAsignado or "-" in valorAsignado or "/" in valorAsignado or "*" in valorAsignado or "%" in valorAsignado):
-                        # sabiendoq ue hay operaciones del lado derecho
-                        for x in splitHijos:
-                            # o variable, o numero u operador
-                            hijo = x
-                            # verificamos si es int
-                            if(not "+" in hijo and not "-" in hijo and not "/" in hijo and not "*" in hijo and not "%" in hijo):
-                                if(self.functions.checkIfIsInt(hijo) == False):
-                                    varExists = self.tablaSimbolos.varExistsRecursivo(
-                                        hijo, scope, False)
-                                    if(varExists):
-                                        informationHijo = self.tablaSimbolos.getVarInformationRecursivo(
-                                            hijo, scope, False, [])
-                                        if(informationHijo[1] != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR_DECLARACION. La variable o valor "{hijo}" NO es del tipo INT. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            # exit()
-                                    else:
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR_DECLARACION. La variable o valor "{hijo}" NO existe o es no puede ser usado en una operacion aritmética. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        # exit()
-                    nameVariableV2 = ""
-                    try:
-                        nameVariableV2 = ctx.location().getText()  # el nombre de la variable
-                    except:
-                        pass
-                    line = ctx.start.line
-                    column = ctx.start.column
-                    scope = self.scopeActual
-                    arrayinformation = []
-                    hasAnotherSon = False
-                    try:
-                        innerLocation = ctx.location().location()
-                        if(innerLocation != None):
-                            hasAnotherSon = True
-                    except:
-                        pass
-                    if("+" in valorAsignado or "-" in valorAsignado or "/" in valorAsignado or "*" in valorAsignado or "%" in valorAsignado):
-                        pass
-                    else:
-                        if(hasAnotherSon):
-                            print("LOGICA para 2 hijos ")
-                        elif(hasAnotherSon == False):  # lógica para un valor del lado derecho UNICO
-                            if("." not in nameVariableV2):  # si no es una structura del lado izquierdo
-                                # verificamos si la variable o valor existe pero una variable no estructura
-                                variableAsignadaExiste = self.tablaSimbolos.varExistsRecursivo(
-                                    nameVariableV2, scope, False)
-                                if(variableAsignadaExiste == True):
-                                    tipoVariableAsignada = self.tablaSimbolos.getVarInformationRecursivo(
-                                        nameVariableV2, scope, False, [])[1]
-                                    if(self.functions.checkIfIsInt(valorAsignado)):
-                                        # si del lado derecho es int, miramos al lado izquierdo
-                                        if(tipoVariableAsignada != "int"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. El valor asignado del lado derecho es INT y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    elif(self.functions.checkGeneraltype(valorAsignado, "string")):
-                                        # si del lado derecho es string, miramos al lado izquierdo
-                                        if(tipoVariableAsignada != "string"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. El valor asignado del lado derecho es STRING y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    elif(valorAsignado == "true" or valorAsignado == "false"):
-                                        # si del lado derecho es boolean, miramos al lado izquierdo
-                                        if(tipoVariableAsignada != "boolean"):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. El valor asignado del lado derecho es BOOLEAN y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    else:
-                                        # verificamos la variable o valor
-                                        varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                            valorAsignado, self.scopeActual, False)
-                                        if(varExistsValor1 == False):
-                                            f = open("errores.txt",
-                                                     "w", encoding="utf8")
-                                            f.write(
-                                                f'--> ERROR. La  variable "{valorAsignado}" no ha sido "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        else:
-                                            varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                                valorAsignado, self.scopeActual, False, [])
-                                            # el tipo de variable
-                                            varTypeInterno1 = varInformation1[1]
-                                            # si del lado derecho la var no tiene el mismo tipo
-                                            if(varTypeInterno1 != tipoVariableAsignada):
-                                                f = open(
-                                                    "errores.txt", "w", encoding="utf8")
-                                                f.write(
-                                                    f'--> ERROR. El valor asignado del lado derecho es no tiene el mismo tipo que el izquierdo y no corresponde con el del izquierdo. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    f = open("errores.txt", "w",
-                                             encoding="utf8")
-                                    f.write(
-                                        f'--> ERROR_TESTEO. La variable o valor "{nameVariableV2}" NO existe. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                            else:  # es una estructura a la izquierda
-                                indice = nameVariableV2.index(".")
-                                variableEstructura = nameVariableV2[0:indice]
-                                variableDentroEstructura = nameVariableV2[indice+1:len(
-                                    nameVariableV2)]
-                                # si la variable que hicimos split o partimos tiene corchete obtenemos solo el nombre
-                                if("[" in variableEstructura or "]" in variableEstructura):
-                                    indexCorchete = variableEstructura.index(
-                                        "[")
-                                    variableEstructura = variableEstructura[0: indexCorchete]
-                                if("[" in variableDentroEstructura or "]" in variableDentroEstructura):
-                                    indexCorchete = variableDentroEstructura.index(
-                                        "[")
-                                    variableDentroEstructura = variableDentroEstructura[0: indexCorchete]
-                                # mandamos ambos parametros
-                                structExists = self.tablaSimbolos.varExistsRecursivo(
-                                    variableEstructura, self.scopeActual, False)
-                                if(structExists):  # si la estructura existe
-                                    # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                    informacionStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                        variableEstructura, self.scopeActual, False, [])
-                                    innerVarExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                                        variableDentroEstructura, informacionStruct[1])
-                                    if(innerVarExists):
-                                        informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                            variableDentroEstructura, informacionStruct[1], False, [])
-                                        tipoDatoInnerVariable = informacionInnerVarStruct[1]
-                                        if(self.functions.checkIfIsInt(valorAsignado)):
-                                            # si del lado derecho es int, miramos al lado izquierdo
-                                            if(tipoDatoInnerVariable != "int"):
-                                                f = open(
-                                                    "errores.txt", "w", encoding="utf8")
-                                                f.write(
-                                                    f'--> ERROR. El valor asignado del lado derecho es INT y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        elif(self.functions.checkGeneraltype(valorAsignado, "string")):
-                                            # si del lado derecho es string, miramos al lado izquierdo
-                                            if(tipoDatoInnerVariable != "string"):
-                                                f = open(
-                                                    "errores.txt", "w", encoding="utf8")
-                                                f.write(
-                                                    f'--> ERROR. El valor asignado del lado derecho es STRING y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        elif(valorAsignado == "true" or valorAsignado == "false"):
-                                            # si del lado derecho es boolean, miramos al lado izquierdo
-                                            if(tipoDatoInnerVariable != "boolean"):
-                                                f = open(
-                                                    "errores.txt", "w", encoding="utf8")
-                                                f.write(
-                                                    f'--> ERROR. El valor asignado del lado derecho es BOOLEAN y no corresponde con el del izquierdo "{nameVariableV2}". linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                        else:
-                                            # si lo del lado derecho es una estructura
-                                            if("." in valorAsignado):
-                                                indice = valorAsignado.index(
-                                                    ".")
-                                                variableEstructuraAsignado = valorAsignado[0:indice]
-                                                variableDentroEstructuraAsignado = valorAsignado[indice+1:len(
-                                                    valorAsignado)]
-                                                # obtenemos infromacion de la estructura y d ela variable que estamos apuntando
-                                                informacionStruct2 = self.tablaSimbolos.getVarInformationRecursivo(
-                                                    variableEstructura, self.scopeActual, False, [])
-                                                informacionInnerVarStruct = self.tablaSimbolos.getVarInformationRecursivo(
-                                                    variableDentroEstructura, informacionStruct2[1], False, [])
-                                                tipoDatoInnerVariable2 = informacionInnerVarStruct[1]
-                                                # si del lado derecho la var no tiene el mismo tipo
-                                                if(tipoDatoInnerVariable2 != tipoDatoInnerVariable):
-                                                    f = open(
-                                                        "errores.txt", "w", encoding="utf8")
-                                                    f.write(
-                                                        f'--> ERROR. El valor asignado del lado derecho es no tiene el mismo tipo que el izquierdo y no corresponde con el del izquierdo. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                            else:
-                                                # verificamos la variable o valor
-                                                varExistsValor1 = self.tablaSimbolos.varExistsRecursivo(
-                                                    valorAsignado, self.scopeActual, False)
-                                                if(varExistsValor1 == False):
-                                                    f = open(
-                                                        "errores.txt", "w", encoding="utf8")
-                                                    f.write(
-                                                        f'--> ERROR. La  variable "{valorAsignado}" no ha sido "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                                else:
-                                                    varInformation1 = self.tablaSimbolos.getVarInformationRecursivo(
-                                                        valorAsignado, self.scopeActual, False, [])
-                                                    # el tipo de variable
-                                                    varTypeInterno1 = varInformation1[1]
-                                                    # si del lado derecho la var no tiene el mismo tipo
-                                                    if(varTypeInterno1 != tipoDatoInnerVariable):
-                                                        f = open(
-                                                            "errores.txt", "w", encoding="utf8")
-                                                        f.write(
-                                                            f'--> ERROR. El valor asignado del lado derecho es no tiene el mismo tipo que el izquierdo y no corresponde con el del izquierdo. linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                    else:
-                                        f = open("errores.txt", "w",
-                                                 encoding="utf8")
-                                        f.write(
-                                            f'--> ERROR. Variable "{variableDentroEstructura}" no existe DENTRO de la estructura "{informacionStruct[1]}".  "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-                                else:
-                                    f = open("errores.txt", "w",
-                                             encoding="utf8")
-                                    f.write(
-                                        f'--> ERROR. Variable {variableEstructura} de tipo Estructura NO existe "{self.scopeActual}", linea: {ctx.start.line} , columna: {ctx.start.column}')
-
-    def exitStatement(self, ctx: decafAlejandroParser.StatementContext):
-        if('if' in ctx.getText() or 'for' in ctx.getText() or 'while' in ctx.getText() or 'else' in ctx.getText()):
-            self.scopeActual = self.scopeAnterior
+        self.tipoNodo[ctx] = self.VOID
 
     def enterVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
-        for x in range(len(ctx.field_var())):
-            name = ctx.field_var()[x].getText()  # el nombre de la variable
-            tipo = ctx.var_type()[x].getText()
-            line = ctx.start.line
-            column = ctx.start.column
-            scope = self.scopeActual
-            arrayValue = ""
-            # condicion por si es un array
-            if("[" in name and "]" in name):
-                indexCorchete = name.index("[")
-                name = name[0: indexCorchete]
-                arrayValue = ctx.field_var()[x].array_id().expr().getText()
+        tipo = ctx.var_type().getText()
 
-                if(self.functions.checkIfIsInt(arrayValue)):
-                    # valor declarado dentro del array
-                    arrayValue = int(arrayValue)
-                    claseError = Errores(name, column, line, "")
-                    hasError, errorValue = claseError.checkArrayError(
-                        arrayValue, False)
-                    if(hasError):
-                        f = open("errores.txt", "w", encoding="utf8")
-                        f.write(errorValue)
-                        # exit()
+        # TOMAR EN CUENTA DECLARACION DE ARRAY'S
+        if ctx.field_var().var_id() is not None:
+            id = ctx.field_var().var_id().getText()
+
+            # Si no encuentra una variable, la guarda en la tabla de simbolos
+            # En caso contrario, ya está declarada, y eso es ERROR.
+
+            if self.tabla_parametros.getSymbolFromTable(id) != 0:
+                self.tipoNodo[ctx] = self.ERROR
+                self.tipoNodo[ctx.field_var()] = self.ERROR
+                line = ctx.field_var().var_id().start.line
+                col = ctx.field_var().var_id().start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_VAR_REPETIDA)
+                return
+
+            if self.scope_Actual.getSymbolFromTable(id) == 0:
+                type_symbol = self.tablaVariables.getSymbolFromTable(tipo)
+                if type_symbol == 0:
+                    line = ctx.var_type().start.line
+                    col = ctx.var_type().start.column
+                    self.errores.AddEntryToTable(
+                        line, col, f'El tipo {tipo} no ha sido declarado previamente.')
+                    self.tipoNodo[ctx] = self.ERROR
+                    self.tipoNodo[ctx.field_var()] = self.ERROR
+                    return
+                size = type_symbol['Size']
+                offset = self.scope_Actual.offsetVariables
+
+                self.scope_Actual.AddEntryToTable(
+                    tipo, id, size, offset, False)
+            else:
+                self.tipoNodo[ctx] = self.ERROR
+                self.tipoNodo[ctx.field_var()] = self.ERROR
+                line = ctx.field_var().var_id().start.line
+                col = ctx.field_var().var_id().start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_VARDUPLICADA)
+        elif ctx.field_var().array_id() is not None:
+            id = ctx.field_var().array_id().getChild(0).getText()
+
+            if self.tabla_parametros.getSymbolFromTable(id) != 0:
+                self.tipoNodo[ctx] = self.ERROR
+                self.tipoNodo[ctx.field_var()] = self.ERROR
+                line = ctx.field_var().var_id().start.line
+                col = ctx.field_var().var_id().start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_VAR_REPETIDA)
+                return
+
+            if self.scope_Actual.getSymbolFromTable(id) == 0:
+                type_symbol = self.tablaVariables.getSymbolFromTable(tipo)
+                if type_symbol == 0:
+                    line = ctx.var_type().start.line
+                    col = ctx.var_type().start.column
+                    self.errores.AddEntryToTable(
+                        line, col, f'El tipo {tipo} no ha sido declarado previamente.')
+                    self.tipoNodo[ctx] = self.ERROR
+                    self.tipoNodo[ctx.field_var()] = self.ERROR
+                    return
+
+                tipo_array = 'array' + tipo
+                size = 0
+
+                if ctx.field_var().array_id().int_literal() is not None:
+                    size = int(
+                        ctx.field_var().array_id().int_literal().getText())
+
+                if 'struct' in tipo_array:
+                    self.tablaVariables.AddEntryToTable(
+                        tipo_array, size, self.tablaVariables.ARRAY + self.tablaVariables.STRUCT)
                 else:
-                    oldArrayValue = arrayValue
-                    varExistsInner, arrayValue = self.tablaSimbolos.checkVarInVarSymbolTable(
-                        arrayValue, self.scopeActual)
-                    if(varExistsInner):
-                        tipoDato = self.tablaSimbolos.getTypeVarDictVar(
-                            oldArrayValue, scope)
-                        claseError = Errores(name, column, line, tipoDato)
-                        hasError, errorValue = claseError.checkArrayError(
-                            arrayValue, True)
-                        if(hasError):
-                            f = open("errores.txt", "w", encoding="utf8")
-                            f.write(errorValue)
-                            # exit()
-                    else:
-                        f = open("errores.txt", "w", encoding="utf8")
-                        f.write(
-                            f'--> ERROR. La variable o valor "{oldArrayValue}" no ha sido declarada e intenta usarse en un array en la linea:{line} columna:{column} ')
-                        # exit()
+                    self.tablaVariables.AddEntryToTable(
+                        tipo_array, size, self.tablaVariables.ARRAY)
 
-                # we add the array to the struct table
-                self.tablaSimbolos.AddNewStruct_DictStruct(
-                    name, tipo, self.scopeAnterior)
+                type_symbol = self.tablaVariables.getSymbolFromTable(
+                    tipo_array)
 
-            varExists = self.tablaSimbolos.checkVarInVarSymbolTableV2(
-                name, self.scopeActual)
-            if(varExists == False):
-                if("struct" in tipo):
-                    tipo = tipo.replace("struct", "")
-                self.tablaSimbolos.AddNewVar_DictVar(name, tipo, scope, 0, 0)
-            elif(varExists == True):
-                f = open("errores.txt", "w", encoding="utf8")
-                f.write(
-                    f'--> Error_VarDeclaration2, la variable {name} ya fue declarada en el scope {scope}. Linea: {line} columna: {column} ')
-                # exit()
-            # ya tenemos las variables actuales
-            # print(name, " ", column, " ", line, " ", tipo, " scope: ", scope)
+                size = type_symbol['Size']
+                offset = self.scope_Actual.offsetVariables
+
+                self.scope_Actual.AddEntryToTable(
+                    tipo_array, id, size, offset, False)
+
+            else:
+                self.tipoNodo[ctx] = self.ERROR
+                self.tipoNodo[ctx.field_var()] = self.ERROR
+                line = ctx.field_var().var_id().start.line
+                col = ctx.field_var().var_id().start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_VARDUPLICADA)
+
+    def enterStruct_declr(self, cstx: decafAlejandroParser.Struct_declrContext):
+        self.addScope()
+
+    def exitStruct_declr(self, ctx: decafAlejandroParser.Struct_declrContext):
+        tipo = ctx.getChild(0).getText() + ctx.getChild(1).getText()
+
+        if self.tablaVariables.getSymbolFromTable(tipo) == 0:
+            size_scope = self.scope_Actual.getSize()
+            self.tablaVariables.AddEntryToTable(
+                tipo, size_scope, self.tablaVariables.STRUCT)
+            self.tabla_estructuras.ExtractInfo(
+                tipo, self.scope_Actual, self.tablaVariables)
+            self.popScope()
+
+            self.tipoNodo[ctx] = self.VOID
+            for child in ctx.children:
+                if not isinstance(child, TerminalNode):
+                    if self.tipoNodo[child] == self.ERROR:
+                        self.tipoNodo[ctx] = self.ERROR
+                        break
+        else:
+            self.tipoNodo[ctx] = self.ERROR
+            line = ctx.start.line
+            col = ctx.start.column
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_VARDUPLICADA)
+
+    def enterVar_id(self, ctx: decafAlejandroParser.Var_idContext):
+        parent = ctx.parentCtx
+        if parent in self.tipoNodo.keys():
+            self.tipoNodo[ctx] = self.tipoNodo[parent]
+
+    def exitVar_id(self, ctx: decafAlejandroParser.Var_idContext):
+        parent = ctx.parentCtx
+        if parent in self.tipoNodo.keys() or ctx in self.tipoNodo.keys():
+            return
+
+        # if ctx.getChildCount() == 1:
+        id = ctx.getText()
+        variable = self.findVar(id)
+        if variable == 0:
+            line = ctx.start.line
+            col = ctx.start.column
+            self.errores.AddEntryToTable(
+                line, col, f'Variable "{id}" no ha sido declarada previamente.')
+            self.tipoNodo[ctx] = self.ERROR
+        else:
+            if variable['Tipo'] in [self.INT, self.STRING, self.BOOLEAN]:
+                self.tipoNodo[ctx] = self.data_type[variable['Tipo']]
+            else:
+                self.tipoNodo[ctx] = self.VOID
+        # else:
 
     def enterArray_id(self, ctx: decafAlejandroParser.Array_idContext):
-        name = ctx.ID().getText()  # el nombre del array
-        column = ctx.start.column
-        line = ctx.start.line
-        # verificamos si lo que viene es un numero o letra
-        arrayValue = ctx.expr().getText()
-        if(self.functions.checkIfIsInt(arrayValue)):
-            # valor declarado dentro del array
-            arrayValue = int(arrayValue)
-            # verificamos si lo que es es una estructura o variable
-            # si no es int verificamos que no sea una variable de una estructura o global
-            varExists = self.tablaSimbolos.varExistsRecursivo(
-                name, self.scopeActual, False)
-            varExistsStruct = False
-            estructuras = self.tablaSimbolos.getDictStruct()
-            for tupla, valorTupla in estructuras.items():
-                varExistsArray2 = self.tablaSimbolos.varExistsRecursivo(
-                    name, valorTupla[0], False)
-                if(varExistsArray2):
-                    varExistsStruct = True
-            if(varExists == True or varExistsStruct == True):
-                pass
-            elif(varExists == False or varExistsStruct == False):
-                claseError = Errores(name, column, line, "")
-                hasError, errorValue = claseError.checkArrayError(
-                    arrayValue, False)
-                if(hasError):
-                    f = open("errores.txt", "w", encoding="utf8")
-                    f.write(errorValue)
-                # exit()
-        elif(self.functions.checkIfIsInt(arrayValue) == False):
-            # si no es int verificamos que no sea una variable
-            varExistsArray = self.tablaSimbolos.varExistsRecursivo(
-                arrayValue, self.scopeActual, False)
-            if(varExistsArray):
-                pass
-            else:
-                f = open("errores.txt", "w", encoding="utf8")
-                f.write(
-                    f'-->  ERROR . El valor DENTRO de un corchete de array debe ser INT. La variable o valor "{arrayValue}" no lo es o no. Linea: {line} columna: {column} ')
-            # exit()
+        parent = ctx.parentCtx
+        if parent in self.tipoNodo.keys():
+            self.tipoNodo[ctx] = self.tipoNodo[parent]
+
+    def exitArray_id(self, ctx: decafAlejandroParser.Array_idContext):
+        parent = ctx.parentCtx
+        if parent in self.tipoNodo.keys() or ctx in self.tipoNodo.keys():
+            return
+
+        id = ctx.getChild(0).getText()
+        variable = self.findVar(id)
+        if variable == 0:
+            line = ctx.start.line
+            col = ctx.start.column
+            self.errores.AddEntryToTable(
+                line, col, f'Variable "{id}" no ha sido declarada previamente.')
+            self.tipoNodo[ctx] = self.ERROR
         else:
-            varExists = self.tablaSimbolos.checkStructInStructSymbolTableV2(
-                arrayValue)
-            if(varExists == False):
-                f = open("errores.txt", "w", encoding="utf8")
-                f.write(
-                    f'--> ERROR_ARRAY. La variable {arrayValue} no es un array . linea: {ctx.start.line} , columna: {ctx.start.column}')
-                # exit()
+            tipo = variable['Tipo']
+            if ctx.int_literal() is not None:
+                if 'array' in tipo:
+                    if tipo.split('array')[-1] in [self.INT, self.STRING, self.BOOLEAN]:
+                        self.tipoNodo[ctx] = self.data_type[tipo.split(
+                            'array')[-1]]
+                    else:
+                        self.tipoNodo[ctx] = self.VOID
+                else:
+                    line = ctx.start.line
+                    col = ctx.start.column
+                    self.errores.AddEntryToTable(
+                        line, col, f'Variable "{id}" debe ser un array.')
+                    self.tipoNodo[ctx] = self.ERROR
+            elif ctx.var_id() is not None:
+                tipo = variable['Tipo']
+                tipo_var = self.findVar(ctx.var_id().getText())
+                self.CheckErrorInArrayId(ctx, tipo, tipo_var)
+
+    def exitVar_type(self, ctx: decafAlejandroParser.Var_typeContext):
+        self.tipoNodo[ctx] = self.VOID
+
+    def exitField_var(self, ctx: decafAlejandroParser.Field_varContext):
+        if ctx not in self.tipoNodo.keys():
+            if ctx.var_id() is not None:
+                self.tipoNodo[ctx] = self.tipoNodo[ctx.getChild(0)]
+            elif ctx.array_id() is not None:
+                self.tipoNodo[ctx] = self.tipoNodo[ctx.getChild(0)]
+
+    def enterField_declr(self, ctx: decafAlejandroParser.Field_declrContext):
+        tipo = ctx.var_type().getText()
+
+        for child in ctx.children:
+            if not isinstance(child, TerminalNode) and isinstance(child, decafAlejandroParser.Field_varContext):
+                id = child.var_id().getText()
+
+                if self.scope_Actual.getSymbolFromTable(id) == 0:
+                    type_symbol = self.tablaVariables.getSymbolFromTable(tipo)
+                    size = type_symbol['Size']
+                    offset = self.scope_Actual.offsetVariables
+
+                    self.scope_Actual.AddEntryToTable(
+                        tipo, id, size, offset, False)
+                else:
+                    self.tipoNodo[child] = self.ERROR
+                    line = child.var_id().start.line
+                    col = child.var_id().start.column
+                    self.errores.AddEntryToTable(
+                        line, col, self.errores.errrorText_VARDUPLICADA)
+
+    def exitField_declr(self, ctx: decafAlejandroParser.Field_declrContext):
+        self.tipoNodo[ctx] = self.VOID
+        for child in ctx.children:
+            if not isinstance(child, TerminalNode):
+                if self.tipoNodo[child] == self.ERROR:
+                    self.tipoNodo[ctx] = self.ERROR
+                    break
+
+    def exitVardeclr(self, ctx: decafAlejandroParser.VardeclrContext):
+        self.tipoNodo[ctx] = self.VOID
+        for child in ctx.children:
+            if not isinstance(child, TerminalNode):
+                if self.tipoNodo[child] == self.ERROR:
+                    self.tipoNodo[ctx] = self.ERROR
+                    break
+
+    def exitString_literal(self, ctx: decafAlejandroParser.String_literalContext):
+        self.tipoNodo[ctx] = self.STRING
+
+    def exitInt_literal(self, ctx: decafAlejandroParser.Int_literalContext):
+        self.tipoNodo[ctx] = self.INT
+
+    def exitBool_literal(self, ctx: decafAlejandroParser.Bool_literalContext):
+        self.tipoNodo[ctx] = self.BOOLEAN
+
+    def exitLiteral(self, ctx: decafAlejandroParser.LiteralContext):
+        self.tipoNodo[ctx] = self.tipoNodo[ctx.getChild(0)]
+
+    def enterBlock(self, ctx: decafAlejandroParser.BlockContext):
+        parent = ctx.parentCtx
+
+        if not isinstance(parent, decafAlejandroParser.Method_declrContext):
+            self.addScope()
+
+    def exitBlock(self, ctx: decafAlejandroParser.BlockContext):
+        parent = ctx.parentCtx
+
+        if not isinstance(parent, decafAlejandroParser.Method_declrContext):
+            self.popScope()
+
+        for child in ctx.children:
+            if not isinstance(child, TerminalNode):
+                if self.tipoNodo[child] == self.ERROR:
+                    self.tipoNodo[ctx] = self.ERROR
+                    return
+
+        hijos_tipo = [self.tipoNodo[i] for i in ctx.children if isinstance(
+            i, decafAlejandroParser.StatementContext)]
+        filtered = list(filter(lambda tipo: tipo != self.VOID, hijos_tipo))
+        if len(filtered) == 0:
+            self.tipoNodo[ctx] = self.VOID
+            return
+
+        if len(filtered) == 1:
+            self.tipoNodo[ctx] = filtered.pop()
+            return
+
+        if self.all_equal(filtered):
+            self.tipoNodo[ctx] = filtered.pop()
+        else:
+            self.tipoNodo[ctx] = self.ERROR
+
+    def exitMethod_call(self, ctx: decafAlejandroParser.Method_callContext):
+        name = ctx.method_name().getText()
+        parameters = []
+
+        for child in ctx.children:
+            if isinstance(child, decafAlejandroParser.ExprContext):
+                parameters.append(child)
+
+        method_info = self.tabla_metodos.getSymbolFromTable(name)
+        if method_info == 0:
+            self.tipoNodo[ctx] = self.ERROR
+            line = ctx.method_name().start.line
+            col = ctx.method_name().start.column
+            self.errores.AddEntryToTable(
+                line, col, f'El método "{name}" no existe o no hay definición del método previamente a ser invocado.')
+            return
+
+        if len(parameters) != len(method_info['Parameters']):
+            self.tipoNodo[ctx] = self.ERROR
+            line = ctx.method_name().start.line
+            col = ctx.method_name().start.column
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_CANTIDAD_PARAMETROS)
+            return
+
+        if len(parameters) == 0:
+            self.tipoNodo[ctx] = method_info['Tipo']
+            return
+
+        hasError = False
+        for i in range(len(parameters)):
+            tipo_parametro = self.tipoNodo[parameters[i]]
+            if tipo_parametro == self.ERROR:
+                self.tipoNodo[ctx] = self.ERROR
+                return
+
+            tipo_metodo = method_info['Parameters'][i]['Tipo']
+
+            if tipo_parametro != tipo_metodo:
+                hasError = True
+
+                line = parameters[i].start.line
+                col = parameters[i].start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_TIPOMETODOS)
+
+            if hasError:
+                self.tipoNodo[ctx] = self.ERROR
+            else:
+                self.tipoNodo[ctx] = method_info['Tipo']
+
+    def GetMethodType(self, ctx):
+        nodo = ctx.parentCtx
+        hijos = [str(type(i))
+                 for i in nodo.children if not isinstance(i, TerminalNode)]
+        while str(decafAlejandroParser.Return_typeContext) not in hijos:
+            nodo = nodo.parentCtx
+            hijos = [str(type(i))
+                     for i in nodo.children if not isinstance(i, TerminalNode)]
+
+        if nodo.return_type().var_type() is not None:
+            return nodo.return_type().var_type().getText()
+        else:
+            return nodo.return_type().getText()
+
+    def exitStatement_if(self, ctx: decafAlejandroParser.Statement_ifContext):
+        error = self.ChildrenHasError(ctx)
+        if error:
+            self.tipoNodo[ctx] = self.ERROR
+            return
+
+        tipo_if = self.tipoNodo[ctx.expr()]
+
+        if tipo_if != self.BOOLEAN:
+            self.tipoNodo[ctx] = self.ERROR
+            line = ctx.expr().start.line
+            col = ctx.expr().start.column
+            self.errores.AddEntryToTable(line, col, self.errores.errrorText_IF)
+            return
+
+        hijos_tipo = [i for i in ctx.children if isinstance(
+            i, decafAlejandroParser.BlockContext)]
+        tipo_return = self.GetMethodType(ctx)
+        if len(hijos_tipo) == 1:
+            hijo_1 = hijos_tipo.pop()
+            if tipo_return == self.tipoNodo[hijo_1]:
+                self.tipoNodo[ctx] = self.tipoNodo[hijo_1]
+            else:
+                self.tipoNodo[ctx] = self.ERROR
+                line = hijo_1.start.line
+                col = hijo_1.start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
+        else:
+            if self.tipoNodo[hijos_tipo[0]] != tipo_return and self.tipoNodo[hijos_tipo[1]] != tipo_return:
+                self.tipoNodo[ctx] = self.ERROR
+                line = hijos_tipo[0].start.line
+                col = hijos_tipo[0].start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
+
+                line = hijos_tipo[1].start.line
+                col = hijos_tipo[1].start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
+                return
+            elif self.tipoNodo[hijos_tipo[0]] != tipo_return:
+                self.tipoNodo[ctx] = self.ERROR
+                line = hijos_tipo[0].start.line
+                col = hijos_tipo[0].start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
+                return
+            elif self.tipoNodo[hijos_tipo[1]] != tipo_return:
+                self.tipoNodo[ctx] = self.ERROR
+                line = hijos_tipo[1].start.line
+                col = hijos_tipo[1].start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_TIPO_RETORNO)
+                return
+
+            if self.tipoNodo[hijos_tipo[0]] == self.tipoNodo[hijos_tipo[1]]:
+                self.tipoNodo[ctx] = self.tipoNodo[hijos_tipo.pop()]
+            else:
+                self.tipoNodo[ctx] = self.ERROR
+
+    def exitStatement_while(self, ctx: decafAlejandroParser.Statement_whileContext):
+        error = self.ChildrenHasError(ctx)
+        if error:
+            self.tipoNodo[ctx] = self.ERROR
+            return
+
+        tipo_while = self.tipoNodo[ctx.expr()]
+
+        if tipo_while != self.BOOLEAN:
+            self.tipoNodo[ctx] = self.ERROR
+            line = ctx.expr().start.line
+            col = ctx.expr().start.column
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_WHILE)
+            return
+
+        hijos_tipo = [self.tipoNodo[i] for i in ctx.children if isinstance(
+            i, decafAlejandroParser.BlockContext)]
+        if len(hijos_tipo) == 1:
+            self.tipoNodo[ctx] = hijos_tipo.pop()
+
+    def exitStatement_return(self, ctx: decafAlejandroParser.Statement_returnContext):
+        error = self.ChildrenHasError(ctx)
+        if error:
+            self.tipoNodo[ctx] = self.ERROR
+            return
+
+        self.tipoNodo[ctx] = self.tipoNodo[ctx.expr()]
+
+    def exitStatement_methodcall(self, ctx: decafAlejandroParser.Statement_methodcallContext):
+        error = self.ChildrenHasError(ctx)
+        if error:
+            self.tipoNodo[ctx] = self.ERROR
+            return
+
+        self.tipoNodo[ctx] = self.tipoNodo[ctx.method_call()]
+
+    def exitStatement_break(self, ctx: decafAlejandroParser.Statement_breakContext):
+        error = self.ChildrenHasError(ctx)
+        if error:
+            self.tipoNodo[ctx] = self.ERROR
+            return
+
+        self.tipoNodo[ctx] = self.VOID
+
+    def exitStatement_assign(self, ctx: decafAlejandroParser.Statement_assignContext):
+        error = self.ChildrenHasError(ctx)
+        if error:
+            self.tipoNodo[ctx] = self.ERROR
+            return
+
+        left = self.tipoNodo[ctx.location()]
+        right = self.tipoNodo[ctx.expr()]
+        result_type = self.VOID
+
+        if left != right:
+            result_type = self.ERROR
+            line = ctx.assign_op().start.line
+            col = ctx.assign_op().start.column
+            self.errores.AddEntryToTable(
+                line, col, self.errores.errrorText_EQUALS)
+        self.tipoNodo[ctx] = result_type
+
+    def exitExpr(self, ctx: decafAlejandroParser.ExprContext):
+        hasError = self.ChildrenHasError(ctx)
+        # if hasError:
+        #     self.tipoNodo[ctx] = self.ERROR
+        #     return
+
+        nodes_nonterminals = []
+        for child in ctx.children:
+            if not isinstance(child, TerminalNode):
+                nodes_nonterminals.append(child)
+
+        if len(nodes_nonterminals) == 1:
+            non_terminal = nodes_nonterminals.pop()
+
+            self.tipoNodo[ctx] = self.tipoNodo[non_terminal]
+        # elif len(nodes_nonterminals) == 0:
+        #     self.tipoNodo[ctx] = self.VOID
+        else:
+            tipo1 = self.tipoNodo[ctx.getChild(0)]
+            tipo2 = self.tipoNodo[ctx.getChild(2)]
+
+            if self.ERROR in [tipo1, tipo2]:
+                self.tipoNodo[ctx] = self.ERROR
+                return
+
+            result_type = self.ERROR
+            error = ''
+            hasError = False
+
+            if ctx.eq_op() is not None:
+                if len(self.Intersection([tipo1, tipo2], [self.STRING, self.INT, self.BOOLEAN])) > 0 and tipo1 == tipo2:
+                    result_type = self.BOOLEAN
+                else:
+                    hasError = True
+                    line = ctx.getChild(0).start.line
+                    col = ctx.getChild(0).start.column
+                    error = self.errores.errrorText_EQ_OPS
+            elif ctx.arith_op() is not None or ctx.rel_op() is not None:
+                if tipo1 == self.INT and tipo2 == self.INT:
+                    result_type = self.INT
+                    if ctx.rel_op() is not None:
+                        result_type = self.BOOLEAN
+                    """ elif tipo1 == self.FLOAT and tipo2 == self.INT:
+                    result_type = self.FLOAT
+                    if ctx.rel_op() is not None:
+                        result_type = self.BOOLEAN
+
+                elif tipo1 == self.INT and tipo2 == self.FLOAT:
+                    result_type = self.FLOAT
+                    if ctx.rel_op() is not None:
+                        result_type = self.BOOLEAN
+                    """
+                else:
+                    hasError = True
+                    if tipo1 != self.INT:
+                        line = ctx.getChild(0).start.line
+                        col = ctx.getChild(0).start.column
+                    else:
+                        line = ctx.getChild(2).start.line
+                        col = ctx.getChild(2).start.column
+
+                    if ctx.arith_op() is not None:
+                        error = self.errores.errrorText_ARITMETICA
+                    else:
+                        error = self.errores.errrorText_REL_OP
+            elif ctx.cond_op() is not None:
+                if tipo1 == self.BOOLEAN and tipo2 == self.BOOLEAN:
+                    result_type = self.BOOLEAN
+                else:
+                    hasError = True
+                    if tipo1 != self.BOOLEAN:
+                        line = ctx.getChild(0).start.line
+                        col = ctx.getChild(0).start.column
+                    else:
+                        line = ctx.getChild(2).start.line
+                        col = ctx.getChild(2).start.column
+
+                    error = self.errores.errrorText_CONDICIONALES_GENERAL
+            else:
+                result_type = self.VOID
+
+            if hasError:
+                self.errores.AddEntryToTable(line, col, error)
+            self.tipoNodo[ctx] = result_type
+
+    def CheckErrorInArrayId(self, ctx, tipo, tipo_var):
+        id = ctx.getChild(0).getText()
+        # variable = self.findVar(id)
+        # tipo = variable['Tipo']
+
+        if ctx.int_literal() is not None:
+            if 'array' in tipo:
+                if tipo.split('array')[-1] in [self.INT, self.STRING, self.BOOLEAN]:
+                    self.tipoNodo[ctx] = self.data_type[tipo.split(
+                        'array')[-1]]
+                else:
+                    self.tipoNodo[ctx] = self.VOID
+            else:
+                line = ctx.start.line
+                col = ctx.start.column
+                self.errores.AddEntryToTable(
+                    line, col, f'Variable "{id}" debe ser un array.')
+                self.tipoNodo[ctx] = self.ERROR
+        elif ctx.var_id() is not None:
+            # tipo_var = self.findVar(ctx.var_id().getText())
+            if tipo_var == 0:
+                line = ctx.start.line
+                col = ctx.start.column
+                self.errores.AddEntryToTable(
+                    line, col, f'Variable "{ctx.var_id().getText()}" no ha sido declarada previamente.')
+                self.tipoNodo[ctx] = self.ERROR
+                return
+
+            if 'array' in tipo and tipo_var['Tipo'] == self.INT:
+                if tipo.split('array')[-1] in [self.INT, self.STRING, self.BOOLEAN]:
+                    self.tipoNodo[ctx] = self.data_type[tipo.split(
+                        'array')[-1]]
+                else:
+                    self.tipoNodo[ctx] = self.VOID
+            elif 'array' in tipo and tipo_var['Tipo'] != self.INT:
+                line = ctx.start.line
+                col = ctx.start.column
+                self.errores.AddEntryToTable(
+                    line, col, f'Variable "{ctx.var_id().getText()}" debe ser INT para acceder a un array.')
+                self.tipoNodo[ctx] = self.ERROR
+            elif 'array' not in tipo:
+                line = ctx.start.line
+                col = ctx.start.column
+                self.errores.AddEntryToTable(
+                    line, col, f'Variable "{id}" debe ser un array.')
+                self.tipoNodo[ctx] = self.ERROR
+            elif tipo_var['Tipo'] != self.INT:
+                line = ctx.start.line
+                col = ctx.start.column
+                self.errores.AddEntryToTable(
+                    line, col, f'Variable "{ctx.var_id().getText()}" debe ser INT para acceder a un array.')
+                self.tipoNodo[ctx] = self.ERROR
+
+    def IterateChildren(self, location, parent_type, description):
+        if location.var_id() is not None:
+            # CASO BASE
+            if location.var_id().location() is None:
+                tipo_retorno = self.ERROR
+                id = location.var_id().getChild(0).getText()
+                if description is None:
+                    self.tipoNodo[location] = self.ERROR
+                    # line = location.start.line
+                    # col = location.start.column
+                    # self.errores.AddEntryToTable(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                else:
+                    if 'struct' in description:
+                        child = self.tabla_estructuras.getChild(
+                            parent_type, id)
+                        if child == 0:
+                            self.tipoNodo[location] = self.ERROR
+                            line = location.start.line
+                            col = location.start.column
+                            self.errores.AddEntryToTable(
+                                line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                        else:
+                            tipo_nodo = self.tablaVariables.getSymbolFromTable(
+                                child['Tipo'])
+                            tipo_retorno = tipo_nodo['Tipo']
+                            self.tipoNodo[location] = tipo_nodo['Tipo']
+                    else:
+                        line = location.start.line
+                        col = location.start.column
+                        self.errores.AddEntryToTable(
+                            line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
+                        self.tipoNodo[location] = self.ERROR
+
+                return tipo_retorno
+
+            id = location.var_id().getChild(0).getText()
+            tipo_nodo = None
+            child_type = None
+            child_desc = None
+
+            if description is None:
+                line = location.start.line
+                col = location.start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
+            else:
+                if 'struct' in description:
+                    child = self.tabla_estructuras.getChild(parent_type, id)
+                    if child == 0:
+                        line = location.start.line
+                        col = location.start.column
+                        self.errores.AddEntryToTable(
+                            line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                    else:
+                        child_type = child['Tipo']
+                        child_desc = child['Description']
+                        tipo_nodo = self.tablaVariables.getSymbolFromTable(
+                            child['Tipo'])
+                else:
+                    line = location.start.line
+                    col = location.start.column
+                    self.errores.AddEntryToTable(
+                        line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
+
+            result_type = self.IterateChildren(
+                location.var_id().location(), child_type, child_desc)
+            self.tipoNodo[location] = result_type
+            return result_type
+
+        elif location.array_id() is not None:
+            # CASO BASE
+
+            if location.array_id().location() is None:
+                tipo_retorno = self.ERROR
+                id = location.array_id().getChild(0).getText()
+                if description is None:
+                    self.tipoNodo[location] = self.ERROR
+                    # line = location.start.line
+                    # col = location.start.column
+                    # self.errores.AddEntryToTable(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                else:
+                    if 'struct' in description:
+                        child = self.tabla_estructuras.getChild(
+                            parent_type, id)
+                        if child == 0:
+                            self.tipoNodo[location] = self.ERROR
+                            line = location.start.line
+                            col = location.start.column
+                            self.errores.AddEntryToTable(
+                                line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                        else:
+                            # HIJO IZQUIERDO
+                            tipo_nodo = self.tablaVariables.getSymbolFromTable(
+                                child['Tipo'])
+                            tipo_retorno = tipo_nodo['Tipo'].split('array')[-1]
+
+                            # HIJO DERECHO
+                            if location.array_id().int_literal() is not None:
+                                if 'array' not in child['Tipo']:
+                                    line = location.array_id().start.line
+                                    col = location.array_id().start.column
+                                    self.errores.AddEntryToTable(
+                                        line, col, f'Variable "{id}" debe ser un array.')  # ATENCION
+                                    self.tipoNodo[location] = self.ERROR
+                                else:
+                                    self.tipoNodo[location] = child['Tipo'].split(
+                                        'array')[-1]
+                            elif location.array_id().var_id() is not None:
+                                tipo = child['Tipo']
+                                tipo_var = self.findVar(
+                                    location.array_id().var_id().getText())
+                                self.CheckErrorInArrayId(
+                                    location.array_id(), tipo, tipo_var)
+
+                                if self.tipoNodo[location.array_id()] != self.ERROR:
+                                    self.tipoNodo[location] = tipo_nodo['Tipo'].split(
+                                        'array')[-1]
+                                else:
+                                    tipo_retorno = self.ERROR
+                                    self.tipoNodo[location] = self.ERROR
+                    else:
+                        line = location.start.line
+                        col = location.start.column
+                        self.errores.AddEntryToTable(
+                            line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
+                        self.tipoNodo[location] = self.ERROR
+                return tipo_retorno
+
+            id = location.array_id().getChild(0).getText()
+            tipo_nodo = None
+            child_type = None
+            child_desc = None
+
+            tipo_retorno = self.VOID
+            if 'struct' in description:
+                child = self.tabla_estructuras.getChild(parent_type, id)
+                if child == 0:
+                    line = location.start.line
+                    col = location.start.column
+                    self.errores.AddEntryToTable(
+                        line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                else:
+                    child_type = child['Tipo']
+                    child_desc = child['Description']
+                    # tipo_nodo = self.tablaVariables.getSymbolFromTable(child['Tipo'])
+
+                    # HIJO IZQUIERDO
+                    tipo_nodo = self.tablaVariables.getSymbolFromTable(
+                        child['Tipo'])
+
+                    # HIJO DERECHO
+                    if location.array_id().int_literal() is not None:
+                        if 'array' not in child['Tipo']:
+                            line = location.array_id().start.line
+                            col = location.array_id().start.column
+                            self.errores.AddEntryToTable(
+                                line, col, f'Variable "{id}" debe ser un array.')
+                            self.tipoNodo[location] = self.ERROR
+                    elif location.array_id().var_id() is not None:
+                        tipo = child['Tipo']
+                        tipo_var = self.findVar(
+                            location.array_id().var_id().getText())
+                        self.CheckErrorInArrayId(
+                            location.array_id(), tipo, tipo_var)
+
+                    if location.array_id() in self.tipoNodo.keys():
+                        if self.tipoNodo[location.array_id()] == self.ERROR:
+                            tipo_retorno = self.ERROR
+                        # self.tipoNodo[location] = self.ERROR
+            else:
+                line = location.start.line
+                col = location.start.column
+                self.errores.AddEntryToTable(
+                    line, col, self.errores.errrorText_ESTRUCTURAGENERAL)
+
+            result_type = self.IterateChildren(
+                location.array_id().location(), child_type, child_desc)
+            self.tipoNodo[location] = result_type
+            if tipo_retorno == self.ERROR:
+                self.tipoNodo[location] = tipo_retorno
+                result_type = tipo_retorno
+            return result_type
+
+    def enterLocation(self, ctx: decafAlejandroParser.LocationContext):
+        parent = ctx.parentCtx
+        if parent in self.tipoNodo.keys():
+            if self.tipoNodo[parent] == self.ERROR:
+                self.tipoNodo[ctx] = self.ERROR
+
+        if ctx in self.tipoNodo.keys():
+            return
+        if ctx.var_id() is not None:
+            if ctx.var_id().location() is None:
+                return
+        elif ctx.array_id() is not None:
+            if ctx.array_id().location() is None:
+                return
+
+        if ctx.var_id() is not None:
+            if ctx.var_id().location() is not None:
+                id = ctx.var_id().getChild(0).getText()
+                # self.scope_Actual.valueToTable()
+
+                symbol = self.findVar(id)
+                if symbol == 0:
+                    line = ctx.start.line
+                    col = ctx.start.column
+                    self.errores.AddEntryToTable(
+                        line, col, f'Variable "{ctx.var_id().getChild(0).getText()}" no ha sido declarada previamente.')
+                    self.tipoNodo[ctx] = self.ERROR
+                else:
+                    tipo_id = self.tablaVariables.getSymbolFromTable(
+                        symbol['Tipo'])
+                    print('Tipo de variable', tipo_id)
+                    if 'array' in tipo_id['Tipo']:
+                        line = ctx.start.line
+                        col = ctx.start.column
+                        self.errores.AddEntryToTable(
+                            line, col, f'Variable "{ctx.var_id().getChild(0).getText()}" debe ser un array.')
+                        self.tipoNodo[ctx] = self.ERROR
+                        return
+                    result_type = self.IterateChildren(
+                        ctx.var_id().location(), tipo_id['Tipo'], tipo_id['Description'])
+                    self.tipoNodo[ctx] = result_type
+
+        if ctx.array_id() is not None:
+            if ctx.array_id().location() is not None:
+                id = ctx.array_id().getChild(0).getText()
+                symbol = self.findVar(id)
+                if symbol == 0:
+                    line = ctx.start.line
+                    col = ctx.start.column
+                    self.errores.AddEntryToTable(
+                        line, col, f'Variable "{ctx.array_id().getChild(0).getText()}" no ha sido declarada previamente.')
+                    self.tipoNodo[ctx] = self.ERROR
+                else:
+                    tipo_id = self.tablaVariables.getSymbolFromTable(
+                        symbol['Tipo'])
+                    result_type = self.IterateChildren(
+                        ctx.array_id().location(), tipo_id['Tipo'], tipo_id['Description'])
+                    self.tipoNodo[ctx] = result_type
+
+                # Hijo derecho
+                    if ctx.array_id().int_literal() is not None:
+                        if 'array' not in tipo_id['Tipo']:
+                            line = ctx.array_id().start.line
+                            col = ctx.array_id().start.column
+                            self.errores.AddEntryToTable(
+                                line, col, f'Variable "{id}" debe ser un array.')
+                            self.tipoNodo[ctx] = self.ERROR
+                    elif ctx.array_id().var_id() is not None:
+                        tipo = tipo_id['Tipo']
+                        tipo_var = self.findVar(
+                            ctx.array_id().var_id().getText())
+                        self.CheckErrorInArrayId(
+                            ctx.array_id(), tipo, tipo_var)
+
+                    if ctx.array_id() in self.tipoNodo.keys():
+                        if self.tipoNodo[ctx.array_id()] == self.ERROR:
+                            self.tipoNodo[ctx] = self.ERROR
+
+    def exitLocation(self, ctx: decafAlejandroParser.LocationContext):
+        if ctx not in self.tipoNodo.keys():
+            self.tipoNodo[ctx] = self.tipoNodo[ctx.getChild(0)]
+
+    def exitDeclaration(self, ctx: decafAlejandroParser.DeclarationContext):
+        self.tipoNodo[ctx] = self.tipoNodo[ctx.getChild(0)]
+
+    def exitProgram(self, ctx: decafAlejandroParser.ProgramContext):
+        main_method = self.tabla_metodos.getSymbolFromTable('main')
+        if main_method != 0:
+            if len(main_method['Parameters']) > 0:
+                self.tipoNodo[ctx] = self.ERROR
+                self.errores.AddEntryToTable(
+                    0, 0, self.errores.errrorText_MAIN_NOT_EXHISTS)
+            else:
+                hasError = self.ChildrenHasError(ctx)
+                if hasError:
+                    self.tipoNodo[ctx] = self.ERROR
+                else:
+                    self.tipoNodo[ctx] = self.VOID
+        else:
+            self.tipoNodo[ctx] = self.ERROR
+            self.errores.AddEntryToTable(
+                0, 0, self.errores.errrorText_MAIN_NOT_EXHISTS)
+
+        self.scope_Actual.valueToTable()
+        print('----------> FIN PROGRAMA <--------------')
+
+        self.tabla_metodos.valueToTable()
+        self.tabla_estructuras.valueToTable()
+
+class Compilar():
+    def __init__(self, url):
+        self.printer = None
+        input = FileStream(url)
+        lexer = decafAlejandroLexer(input)
+        stream = CommonTokenStream(lexer)
+        parser = decafAlejandroParser(stream)
+        self.errorFromAntlr = MyErrorListener()
+        parser.removeErrorListeners()
+        parser.addErrorListener(self.errorFromAntlr)
+        tree = parser.program()
+
+        if not self.errorFromAntlr.getHasError():
+            self.printer = DecafAlejandroPrinter()
+            walker = ParseTreeWalker()
+            walker.walk(self.printer, tree)
+
+    def HasLexicalError(self):
+        return self.errorFromAntlr.getHasError()
 
 
-def main(nombreFile="simple.decaf"):
-    """
-    método main principal
-    """
-    streamNameFile = 'Python3/programs/' + nombreFile
-    data = ""
-    lexer = ""
-    try:
-        data = open(streamNameFile).read()
-        # hacemos el open de la data del archivo de prueba
-        # invocamos al lexer
-        lexer = decafAlejandroLexer(InputStream(data))
-    except:
-        f = open("errores.txt", "w", encoding="utf8")
-        f.write('Error, introduce UN NOMBRE DE ARCHIVO VALIDO')
-    # jalamos el stream
-    stream = CommonTokenStream(lexer)
-    # invocamos al parser
-    parser = decafAlejandroParser(stream)
-    parser.removeErrorListeners()
-    parser.addErrorListener(MyErrorListener())
-    # invocamos al arbol
-    tree = parser.program()
-    # ? invocamos al printer, este printer es nuestra CLASE declarada arriba
-    printer = decafAlejandroPrinter()
-    # el walker camina
-    walker = ParseTreeWalker()
-    # l eindicamos al walker que avance en el arbol con el priner
-    walker.walk(printer, tree)
-
-
-main()
-
-""" 
-def pedirNumeroEntero():
-    
-    correcto = False
-    num = 0
-    while(not correcto):
-        try:
-            num = int(input("Introduce un numero entero: "))
-            correcto = True
-        except ValueError:
-            print('Error, introduce un numero entero')
-
-    return num
-
-
-salir = False
-opcion = 0
-
-while not salir:
-    
-    print("")
-    print("------------------------> MENU <-----------------------")
-    pprint(emoji.emojize( "1."+ ":winking_face_with_tongue:") + " Opcion 1: cargar archivo de pruebas y ejecutar")
-    pprint("2."+"\U0001F923 "+"Opcion 2: SALIR")
-
-    pprint("Elige una opcion")
-
-    opcion = pedirNumeroEntero()
-
-    if opcion == 1:
-        nombreFile = str(input("Introduce el nombre del .decaf : "))
-        main(nombreFile)
-    elif opcion == 2:
-        salir = True
-    else:
-        print("Introduce un numero entre 1 y 2")
-
-print("\U0001F923")
-print("Fin. ADIOS") """
+comp = Compilar('Python3/programs/multiple_tests.decaf')
