@@ -284,7 +284,7 @@ class MainWindow(QMainWindow):
 
     def compilarFile(self):
         """
-        Método para
+        Método para compilar
         """
         if self.path is None:
             return self.file_saveas()
@@ -303,7 +303,7 @@ class MainWindow(QMainWindow):
                 self.errorForLog.setText(errores)
 
             else:
-                if programaCompilado.printer.node_type[programaCompilado.printer.root] == 'error' or len(programaCompilado.printer.errores.errores) > 0:
+                if programaCompilado.printer.tipoNodo[programaCompilado.printer.root] == 'error' or len(programaCompilado.printer.errores.errores) > 0:
                     errores = '\n'.join(
                         programaCompilado.printer.errores.getAllErrors())
                     self.errorForLog.setText(errores)
